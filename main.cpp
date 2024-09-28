@@ -1,11 +1,11 @@
 #include <iostream>
 #include <cassert>
 
-#include "scp.h"
+#include "csp.h"
 
 int main() {
 
-    SCP queenProblem;
+    CSP queenProblem;
     queenProblem.makeNQueen(4);
     queenProblem.display();
     std::unordered_map<int,int> sol_ok = {{0,1},{1,3},{2,0},{3,2}};
@@ -14,7 +14,7 @@ int main() {
     assert(!queenProblem.feasible(sol_ko));
 
     ProblemReader::ColorProblem instance = ProblemReader::readColorProblem("graph_color_instances/myciel3.col");
-    SCP colorProblem;
+    CSP colorProblem;
     colorProblem.init(instance,3);
     colorProblem.display();
     return 0;

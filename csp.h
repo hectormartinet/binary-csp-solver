@@ -1,5 +1,5 @@
-#ifndef SCP_H_
-#define SCP_H_
+#ifndef CSP_H_
+#define CSP_H_
 
 #include <unordered_set>
 #include <vector>
@@ -7,14 +7,14 @@
 #include "constraint.h"
 #include "problemreader.h"
 
-class SCP {
+class CSP {
 
 private:
     std::unordered_map<int,std::unordered_set<int>> domains;
     std::unordered_map<int,std::unordered_map<int,Constraint>> constraints;
 
 public:
-    SCP(){};
+    CSP(){};
 
     std::size_t nbVar() const{return domains.size();}
 

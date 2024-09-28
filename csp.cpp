@@ -2,29 +2,29 @@
 #include <iostream>
 #include <cassert>
 
-#include "scp.h"
+#include "csp.h"
 
-void SCP::addVariable(int i) {
+void CSP::addVariable(int i) {
     if (domains.count(i) == 0)
         domains.emplace(i,std::unordered_set<int>());
 }
 
-void SCP::addVariableValue(int var, int value) {
+void CSP::addVariableValue(int var, int value) {
     domains.at(var).emplace(value);
 }
 
-void SCP::addConstraint(int i, int j) {
+void CSP::addConstraint(int i, int j) {
     if (constraints.count(i) == 0)
         constraints.emplace(i,std::unordered_map<int,Constraint>());
     if (constraints.at(i).count(j) == 0)
         constraints.at(i).emplace(j,Constraint(i,j));
 }
 
-void SCP::addConstraintValuePair(int i, int j, int a, int b) {
+void CSP::addConstraintValuePair(int i, int j, int a, int b) {
     constraints.at(i).at(j).addPair(a,b);
 }
 
-bool SCP::feasible(const std::unordered_map<int,int>& partSol) const{
+bool CSP::feasible(const std::unordered_map<int,int>& partSol) const{
 
     // Checking Domains
     for (const auto& [var,value] : partSol)  {
@@ -45,7 +45,7 @@ bool SCP::feasible(const std::unordered_map<int,int>& partSol) const{
     return true;
 }
 
-void SCP::makeNQueen(int n){
+void CSP::makeNQueen(int n){
 
     // Domains
     for (int var=0; var<n; var++) {
@@ -69,7 +69,7 @@ void SCP::makeNQueen(int n){
     }
 }
 
-void SCP::init(ProblemReader::ColorProblem problem, int nbColors) {
+void CSP::init(ProblemReader::ColorProblem problem, int nbColors) {
 
     // Domains
     // Conventions on files -> starting from 1
@@ -92,7 +92,7 @@ void SCP::init(ProblemReader::ColorProblem problem, int nbColors) {
     }
 }
 
-void SCP::display() const {
+void CSP::display() const {
     std::cout << "DOMAINS" << std::endl;
     for (const auto&[var,domain]:domains) {
         std::cout << var << ":";

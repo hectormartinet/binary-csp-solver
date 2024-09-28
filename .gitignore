@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+# Instances
+graph_color_instances/*

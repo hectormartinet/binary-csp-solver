@@ -18,6 +18,8 @@ public:
 
     std::size_t nbVar() const{return domains.size();}
 
+    void addVariable(int i);
+    void addVariableValue(int var, int value);
     void addConstraint(int i, int j);
     void addConstraint(std::pair<int,int> pair) {return addConstraint(pair.first, pair.second);}
     void addConstraintValuePair(int i, int j, int a, int b);

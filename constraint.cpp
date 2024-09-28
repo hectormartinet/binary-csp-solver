@@ -4,8 +4,8 @@
 
 
 Constraint::Constraint(int _x, int _y, const std::vector<std::pair<int,int>>& pairs):x{_x},y{_y} {
-    for (std::pair<int,int> pair : pairs) {
-        addPair(pair.first,pair.second);
+    for (const auto& [a,b] : pairs) {
+        addPair(a,b);
     }
 }
 

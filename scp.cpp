@@ -4,6 +4,15 @@
 
 #include "scp.h"
 
+void SCP::addVariable(int i) {
+    if (domains.count(i) == 0)
+        domains.emplace(i,std::unordered_set<int>());
+}
+
+void SCP::addVariableValue(int var, int value) {
+    domains.at(var).emplace(value);
+}
+
 void SCP::addConstraint(int i, int j) {
     if (constraints.count(i) == 0)
         constraints.emplace(i,std::unordered_map<int,Constraint>());
@@ -18,8 +27,8 @@ void SCP::addConstraintValuePair(int i, int j, int a, int b) {
 bool SCP::feasible(const std::unordered_map<int,int>& partSol) const{
 
     // Checking Domains
-    for (std::pair<int, int> keyValue : partSol)  {
-        if (domains.at(keyValue.first).count(keyValue.second)==0)
+    for (const auto& [var,value] : partSol)  {
+        if (domains.at(var).count(value)==0)
             return false;
     }
 
@@ -39,10 +48,10 @@ bool SCP::feasible(const std::unordered_map<int,int>& partSol) const{
 void SCP::makeNQueen(int n){
 
     // Domains
-    for (int i=0; i<n; i++) {
-        domains.emplace(i,std::unordered_set<int>());
-        for (int j=0; j<n; j++) {
-            domains.at(i).emplace(j);
+    for (int var=0; var<n; var++) {
+        addVariable(var);
+        for (int value=0; value<n; value++) {
+            addVariableValue(var,value);
         }
     }
 
@@ -64,10 +73,10 @@ void SCP::init(ProblemReader::ColorProblem problem, int nbColors) {
 
     // Domains
     // Conventions on files -> starting from 1
-    for (int i=1; i<=problem.nb_nodes; i++) {
-        domains.emplace(i,std::unordered_set<int>());
+    for (int var=1; var<=problem.nb_nodes; var++) {
+        addVariable(var);
         for (int col=0; col<nbColors; col++) {
-            domains.at(i).emplace(col);
+            addVariableValue(var,col);
         }
     }
 

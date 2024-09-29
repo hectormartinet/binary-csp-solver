@@ -5,6 +5,7 @@
 #include "csp.h"
 
 void CSP::addVariable(int i) {
+    variables.emplace(i);
     if (domains.count(i) == 0)
         domains.emplace(i,std::unordered_set<int>());
 }
@@ -93,6 +94,12 @@ void CSP::init(ProblemReader::ColorProblem problem, int nbColors) {
 }
 
 void CSP::display() const {
+    std::cout << "VARIABLES" << std::endl;
+    for (int var : variables) {
+        std::cout << var << ",";
+    }
+    std::cout<< std::endl << std::endl;
+
     std::cout << "DOMAINS" << std::endl;
     for (const auto&[var,domain]:domains) {
         std::cout << var << ":";

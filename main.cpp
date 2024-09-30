@@ -11,12 +11,13 @@ int main() {
     queenProblem.display();
     Solver solver(queenProblem);
     if (solver.solve()) {
-        std::cout << "found solution" << std::endl;
+        std::cout << "Explored " << solver.getNbNodesExplored() << " nodes" << std::endl;
+        std::cout << "Found solution" << std::endl;
         auto sol = solver.retrieveSolution();
         assert(queenProblem.feasible(sol));
         solver.displaySolution();
     } else {
-        std::cout << "no solution found" << std::endl;
+        std::cout << "No solution found" << std::endl;
     }
 
     // ProblemReader::ColorProblem instance = ProblemReader::readColorProblem("graph_color_instances/myciel3.col");

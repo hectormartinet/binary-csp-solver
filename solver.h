@@ -10,16 +10,18 @@ private:
     CSP problem;
     std::unordered_map<int,int> setVariables;
     std::unordered_set<int> unsetVariables;
+    unsigned int nbNodesExplored=0;
 
 public:
     Solver(){}
     Solver(CSP _problem);
 
-    bool feasible() {return problem.feasible(setVariables);}
+    bool feasible() const{return problem.feasible(setVariables);}
     bool solve();
 
-    std::unordered_map<int,int> retrieveSolution() {return setVariables;}
-    void displaySolution();
+    std::unordered_map<int,int> retrieveSolution() const{return setVariables;}
+    unsigned int getNbNodesExplored() const{return nbNodesExplored;}
+    void displaySolution() const;
 
 };
 

@@ -17,6 +17,7 @@ public:
     Solver(CSP _problem);
 
     bool feasible() const{return problem.feasible(setVariables);}
+    bool feasible(int var, int value) const {return problem.feasible(setVariables,var,value);}
     bool solve();
 
     std::unordered_map<int,int> retrieveSolution() const{return setVariables;}

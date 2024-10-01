@@ -39,6 +39,9 @@ public:
     DomainIterator getDomain(int var) {return DomainIterator(domains.at(var));}
 
     bool feasible(const std::unordered_map<int,int>& partSol) const;
+    // Check if the added variable do not produce infeasibility with the given value
+    // assuming the partial solution without this variable is feasible
+    bool feasible(const std::unordered_map<int,int>& partSol, int var, int value) const;
     void init(ColorProblem problem, int nbColors);
     void init(QueenProblem problem);
     void display(bool removeSymmetry = true) const;

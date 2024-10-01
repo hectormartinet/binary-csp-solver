@@ -7,16 +7,16 @@ Solver::Solver(CSP _problem) : problem(_problem) {
 
 bool Solver::solve() {
     nbNodesExplored++;
-    if (!feasible()) return false;
     if (unsetVariables.empty()) return true;
     int var = *unsetVariables.begin();
     unsetVariables.erase(var);
-    setVariables.emplace(var,0);
     for (int value : problem.getDomain(var)) {
-        setVariables.at(var) = value;
+        // This check is not necessary if the domains are always up to date
+        if (!feasible(var,value)) continue;
+        setVariables.emplace(var,value);
         if (solve()) return true;
+        setVariables.erase(var);
     }
-    setVariables.erase(var);
     unsetVariables.emplace(var);
     return false;
 }

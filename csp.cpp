@@ -52,9 +52,21 @@ bool CSP::feasible(const std::unordered_map<int,int>& partSol) const{
         for (const auto& [j,ijConstraint] : iConstraints) {
             if (i>j) continue; // do not check the symmetric version of the constraint
             if (partSol.count(j)==0) continue;
-            if (!ijConstraint.feasible(partSol))
-                return false;
+            if (!ijConstraint.feasible(partSol)) return false;
         }
+    }
+
+    return true;
+}
+
+bool CSP::feasible(const std::unordered_map<int,int>& partSol, int var, int value) const{
+    
+    if (domains.at(var).count(value)==0) return false;
+    if (constraints.count(var)==0) return true;
+    
+    for (const auto& [j,constraint] : constraints.at(var)) {
+        if (partSol.count(j)==0) continue;
+        if (!constraint.feasible(value,partSol.at(j))) return false;
     }
 
     return true;

@@ -15,6 +15,11 @@ void Constraint::addPair(int a, int b) {
     list.at(a).emplace(b);
 }
 
+void Constraint::removePair(int a, int b) {
+    if (list.count(a)==0) return;
+    list.at(a).erase(b);
+}
+
 void Constraint::display() const {
     std::cout << x << "," << y << ":";
     for (const auto& [a,bSet] : list) {

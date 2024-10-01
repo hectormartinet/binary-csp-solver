@@ -4,17 +4,11 @@
 #include <vector>
 #include <string>
 
+#include "instances.h"
+
 class ProblemReader {
-
 public:
-    struct ColorProblem {
-        int nb_nodes;
-        int nb_edges;
-        std::vector<std::pair<int,int>> edges;
-    };
-
     static ColorProblem readColorProblem(std::string path);
-
 };
 
 #endif

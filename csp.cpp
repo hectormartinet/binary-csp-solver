@@ -15,14 +15,27 @@ void CSP::addVariableValue(int var, int value) {
 }
 
 void CSP::addConstraint(int i, int j) {
+    assert(i!=j);
     if (constraints.count(i) == 0)
         constraints.emplace(i,std::unordered_map<int,Constraint>());
     if (constraints.at(i).count(j) == 0)
         constraints.at(i).emplace(j,Constraint(i,j));
+    
+    // add the symmetric constraint
+    if (constraints.count(j) == 0)
+        constraints.emplace(j,std::unordered_map<int,Constraint>());
+    if (constraints.at(j).count(i) == 0)
+        constraints.at(j).emplace(i,Constraint(j,i));
 }
 
 void CSP::addConstraintValuePair(int i, int j, int a, int b) {
     constraints.at(i).at(j).addPair(a,b);
+    constraints.at(j).at(i).addPair(b,a);// add symmetric constraint values
+}
+
+void CSP::removeConstraintValuePair(int i, int j, int a, int b) {
+    constraints.at(i).at(j).removePair(a,b);
+    constraints.at(j).at(i).removePair(b,a);
 }
 
 bool CSP::feasible(const std::unordered_map<int,int>& partSol) const{
@@ -37,8 +50,9 @@ bool CSP::feasible(const std::unordered_map<int,int>& partSol) const{
     for (const auto& [i,iConstraints] : constraints) {
         if (partSol.count(i)==0) continue;
         for (const auto& [j,ijConstraint] : iConstraints) {
+            if (i>j) continue; // do not check the symmetric version of the constraint
             if (partSol.count(j)==0) continue;
-            if (not ijConstraint.feasible(partSol))
+            if (!ijConstraint.feasible(partSol))
                 return false;
         }
     }
@@ -46,7 +60,8 @@ bool CSP::feasible(const std::unordered_map<int,int>& partSol) const{
     return true;
 }
 
-void CSP::makeNQueen(int n){
+void CSP::init(QueenProblem problem){
+    int n = problem.nb_queens;
 
     // Domains
     for (int var=0; var<n; var++) {
@@ -70,7 +85,7 @@ void CSP::makeNQueen(int n){
     }
 }
 
-void CSP::init(ProblemReader::ColorProblem problem, int nbColors) {
+void CSP::init(ColorProblem problem, int nbColors) {
 
     // Domains
     // Conventions on files -> starting from 1
@@ -93,7 +108,7 @@ void CSP::init(ProblemReader::ColorProblem problem, int nbColors) {
     }
 }
 
-void CSP::display() const {
+void CSP::display(bool removeSymmetry) const {
     std::cout << "VARIABLES" << std::endl;
     for (int var : variables) {
         std::cout << var << ",";
@@ -112,6 +127,7 @@ void CSP::display() const {
     std::cout << "CONSTRAINTS" << std::endl;
     for (const auto& [i,iConstraints] : constraints) {
         for (const auto& [j,ijConstraints] : iConstraints) {
+            if (i>j && removeSymmetry) continue;
             ijConstraints.display();
         }
     }

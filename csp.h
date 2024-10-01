@@ -24,6 +24,7 @@ public:
     void addConstraint(int i, int j);
     void addConstraint(std::pair<int,int> pair) {return addConstraint(pair.first, pair.second);}
     void addConstraintValuePair(int i, int j, int a, int b);
+    void removeConstraintValuePair(int i, int j, int a, int b);
 
     std::unordered_set<int> getVariables() {return variables;}
    
@@ -38,9 +39,9 @@ public:
     DomainIterator getDomain(int var) {return DomainIterator(domains.at(var));}
 
     bool feasible(const std::unordered_map<int,int>& partSol) const;
-    void makeNQueen(int n);
-    void init(ProblemReader::ColorProblem problem, int nbColors);
-    void display() const;
+    void init(ColorProblem problem, int nbColors);
+    void init(QueenProblem problem);
+    void display(bool removeSymmetry = true) const;
 };
 
 #endif

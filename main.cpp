@@ -7,7 +7,7 @@ int main() {
     int n = 4;
 
     CSP queenProblem;
-    queenProblem.makeNQueen(n);
+    queenProblem.init(QueenProblem{n});
     queenProblem.display();
     Solver solver(queenProblem);
     if (solver.solve()) {
@@ -20,7 +20,7 @@ int main() {
         std::cout << "No solution found" << std::endl;
     }
 
-    // ProblemReader::ColorProblem instance = ProblemReader::readColorProblem("graph_color_instances/myciel3.col");
+    // ColorProblem instance = ProblemReader::readColorProblem("graph_color_instances/myciel3.col");
     // CSP colorProblem;
     // colorProblem.init(instance,3);
     // colorProblem.display();

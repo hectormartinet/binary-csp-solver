@@ -33,3 +33,6 @@
 
 # Instances
 graph_color_instances/*
+
+# VsCode
+.vscode/*

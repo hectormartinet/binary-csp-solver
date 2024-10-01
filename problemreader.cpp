@@ -5,7 +5,7 @@
 
 #include "problemreader.h"
 
-ProblemReader::ColorProblem ProblemReader::readColorProblem(std::string path) {
+ColorProblem ProblemReader::readColorProblem(std::string path) {
     std::ifstream inputFile(path);
     ColorProblem problem;
     

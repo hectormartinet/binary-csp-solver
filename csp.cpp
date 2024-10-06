@@ -11,7 +11,26 @@ void CSP::addVariable(int i) {
 }
 
 void CSP::addVariableValue(int var, int value) {
+    assert(domains.count(var));
     domains.at(var).emplace(value);
+}
+
+void CSP::removeVariableValue(int var, int value) {
+    if (domains.count(var)==0) return;
+    domains.at(var).erase(value);
+}
+
+bool CSP::isInDomain(int var, int a) {
+    return domains.at(var).count(a);
+}
+
+void CSP::fixValue(int var, int a) {
+    assert(isInDomain(var, a));
+    for (int value : getDomain(var)) {
+        if (value != a) {
+            domains.at(var).erase(value);
+        }
+    }
 }
 
 void CSP::addConstraint(int i, int j) {
@@ -36,6 +55,37 @@ void CSP::addConstraintValuePair(int i, int j, int a, int b) {
 void CSP::removeConstraintValuePair(int i, int j, int a, int b) {
     constraints.at(i).at(j).removePair(a,b);
     constraints.at(j).at(i).removePair(b,a);
+}
+
+void CSP::initCount(int i, int j, int a, int val) {
+    if (counts.count(i) == 0)
+        counts.emplace(i,std::unordered_map<int,std::unordered_map<int, int>>());
+    if (counts.at(i).count(j) == 0)
+        counts.at(i).emplace(j,std::unordered_map<int, int>());
+    if (counts.at(i).at(j).count(a)==0)
+        counts.at(i).at(j).emplace(a, val);
+    else 
+        counts.at(i).at(j).at(a) = val;
+}
+
+void CSP::reduceCount(int i, int j, int a, int val) {
+    counts.at(i).at(j).at(a)-=val;
+}
+
+int CSP::getCount(int i, int j, int a) {
+    return counts.at(i).at(j).at(a);
+}
+
+void CSP::addSupport(int i, int a, int j, int b) {
+    if (support.count(j) == 0)
+        support.emplace(j,std::unordered_map<int,std::vector<std::pair<int,int>>>());
+    if (support.at(j).count(b) == 0)
+        support.at(j).emplace(b,std::vector<std::pair<int, int>>());
+    support.at(j).at(b).push_back(std::make_pair(i, a));
+}
+
+void CSP::addAC4List(int i, int a) {
+    AC4List.push_back(std::make_pair(i, a));
 }
 
 bool CSP::feasible(const std::unordered_map<int,int>& partSol) const{
@@ -95,6 +145,7 @@ void CSP::init(QueenProblem problem){
             }
         }
     }
+    initAC4();
 }
 
 void CSP::init(ColorProblem problem, int nbColors) {
@@ -120,6 +171,56 @@ void CSP::init(ColorProblem problem, int nbColors) {
     }
 }
 
+void CSP::initAC4() {
+    for (const auto& [x,iConstraints] : constraints) {
+        for (const auto& [y,ijConstraint] : iConstraints) {
+            for (int a : getDomain(x)) {
+                int total = 0;
+                for (int b : getDomain(y)) {
+                    if (ijConstraint.feasible(a,b)) {
+                        total++;
+                        addSupport(x, a, y, b);
+                    }
+                }
+                initCount(x, y, a, total);
+                if (total==0) {
+                    removeVariableValue(x, a);
+                    addAC4List(x, a);
+                }
+            }
+        }
+    }   
+}
+
+std::pair<std::unordered_map<int,std::unordered_map<int,std::unordered_map<int,int>>>, std::vector<std::pair<int,int>>> CSP::AC4() {
+    std::unordered_map<int, std::unordered_map<int,std::unordered_map<int,int>>> initCount;
+    std::vector<std::pair<int,int>> removedValues;
+    while (AC4List.size() > 0) {
+        std::pair<int,int> firstCouple = AC4List.front();
+        int y = firstCouple.first;
+        int b = firstCouple.second;
+        AC4List.erase(AC4List.begin());
+        if (support.count(y) != 0 && support.at(y).count(b) != 0) {
+            for (std::pair<int,int> secondCouple : support.at(y).at(b)){
+                int x = secondCouple.first;
+                int a = secondCouple.second;
+                if (!initCount.count(x)) initCount.emplace(x, std::unordered_map<int, std::unordered_map<int,int>>());
+                if (!initCount.at(x).count(y)) initCount.at(x).emplace(y, std::unordered_map<int,int>());
+                if (!initCount.at(x).at(y).count(a)) initCount.at(x).at(y).emplace(a, getCount(x, y, a));
+
+                reduceCount(x, y, a, 1);
+                if (getCount(x, y, a) == 0 && isInDomain(x, a)) {
+                    removeVariableValue(x, a);
+                    addAC4List(x, a);
+                    removedValues.push_back(std::make_pair(x, a));
+                }
+
+            }
+        }
+    }
+    return std::make_pair(initCount, removedValues);
+}
+
 void CSP::display(bool removeSymmetry) const {
     std::cout << "VARIABLES" << std::endl;
     for (int var : variables) {
@@ -143,4 +244,5 @@ void CSP::display(bool removeSymmetry) const {
             ijConstraints.display();
         }
     }
+    std::cout << std::endl;
 }

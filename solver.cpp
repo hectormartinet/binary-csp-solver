@@ -28,8 +28,8 @@ bool Solver::forwardChecking(int x, int a) {
 }
 
 void Solver::backOldDomains() {
-    for (std::pair<int, int> val : deltaDomains.back()) {
-        problem.addVariableValue(val.first, val.second);
+    for (std::pair<int, int> couple : deltaDomains.back()) {
+        problem.addVariableValue(couple.first, couple.second);
     }
     deltaDomains.pop_back();
 }
@@ -37,18 +37,18 @@ void Solver::backOldDomains() {
 bool Solver::solve() {
     nbNodesExplored++;
     if (unsetVariables.empty()) return true;
-    int x = *unsetVariables.begin();
-    unsetVariables.erase(x);
+    int var = *unsetVariables.begin();
+    unsetVariables.erase(var);
 
-    for (int a : problem.getDomain(x)) {
-        if (!forwardChecking(x, a)) continue;
-        fixVarValue(x, a);
+    for (int value : problem.getDomain(var)) {
+        if (!forwardChecking(var, value)) continue;
+        fixVarValue(var, value);
         if (solve()) return true;
         backOldDomains();
-        unfixVarValue(x);
+        unfixVarValue(var);
     }
 
-    unsetVariables.emplace(x);
+    unsetVariables.emplace(var);
     return false;
 }
 

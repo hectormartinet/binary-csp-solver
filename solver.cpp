@@ -27,7 +27,7 @@ bool Solver::forwardChecking(int x, int a) {
     return true;
 }
 
-void Solver::stepBack() {
+void Solver::backOldDomains() {
     for (std::pair<int, int> val : deltaDomains.back()) {
         problem.addVariableValue(val.first, val.second);
     }
@@ -44,7 +44,7 @@ bool Solver::solve() {
         if (!forwardChecking(x, a)) continue;
         fixVarValue(x, a);
         if (solve()) return true;
-        stepBack();
+        backOldDomains();
         unfixVarValue(x);
     }
 

@@ -11,4 +11,9 @@ struct QueenProblem {
     int nb_queens;
 };
 
+struct SudokuProblem {
+    unsigned int n;
+    std::vector<std::vector<int>> grid;
+};
+
 #endif

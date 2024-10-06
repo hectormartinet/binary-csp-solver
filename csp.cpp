@@ -28,6 +28,15 @@ void CSP::addConstraint(int i, int j) {
         constraints.at(j).emplace(i,Constraint(j,i));
 }
 
+void CSP::addConstraint(int i, int j, const std::function<bool(int,int)>& validPair) {
+    addConstraint(i,j);
+    for (int a : domains.at(i)) {
+        for (int b : domains.at(j)) {
+            if (validPair(a,b)) constraints.at(i).at(j).addPair(a,b);
+        }
+    }
+}
+
 void CSP::addConstraintValuePair(int i, int j, int a, int b) {
     constraints.at(i).at(j).addPair(a,b);
     constraints.at(j).at(i).addPair(b,a);// add symmetric constraint values
@@ -86,13 +95,7 @@ void CSP::init(QueenProblem problem){
     // Constraints
     for (int i=0; i<n; i++) {
         for (int j=i+1; j<n; j++) {
-            addConstraint(i,j);
-            for (int a=0; a<n; a++) {
-                for (int b=0; b<n; b++) {
-                    if (a!=b && std::abs(a-b)!=std::abs(i-j))
-                        addConstraintValuePair(i,j,a,b);
-                }
-            }
+            addConstraint(i,j,[&](int a, int b) {return a!=b && std::abs(a-b)!=std::abs(i-j);});
         }
     }
 }
@@ -108,13 +111,64 @@ void CSP::init(ColorProblem problem, int nbColors) {
         }
     }
 
-    //Constraint
+    auto lamdaDifferent = [](int a,int b) {return a != b;};
+
+    //Constraints
     for (std::pair<int,int> edge : problem.edges) {
-        addConstraint(edge);
-        for (int col1=0; col1<nbColors; col1++) {
-            for (int col2=0; col2<nbColors; col2++) {
-                if (col1 != col2)
-                    addConstraintValuePair(edge.first,edge.second,col1,col2);
+        addConstraint(edge,lamdaDifferent);
+    }
+}
+
+void CSP::init(SudokuProblem problem) {
+    assert(problem.grid.size() == problem.n);
+
+    unsigned int n = problem.n;
+    int nInt = int(n); // to calm down gcc warnings
+    int sqrLen = int(sqrt(n));
+    
+    // Domains
+    for (unsigned int i=0; i<n; i++) {
+        assert(problem.grid[i].size() == n);
+        for (unsigned int j=0; j<n; j++) {
+            int varIdx = int(n*i+j);
+            addVariable(varIdx);
+            if (problem.grid[i][j] <= 0) {
+                assert(problem.grid[i][j] <= nInt);
+                addVariableValue(varIdx,problem.grid[i][j]);
+                continue;
+            }
+            for (int val=1; val<=(int)n; val++) {
+                addVariableValue(varIdx,val);
+            }
+        }
+    }
+
+    auto lambdaDifferent = [](int a,int b) {return a != b;};
+
+    // Constraints
+    for (int i=0; i<nInt; i++) {
+        for (int j=0; j<nInt; j++) {
+            int varIdx = nInt*i+j;
+
+            // Line constraint
+            for (int i2=i+1; i2<nInt; i++) {
+                int var2Idx = nInt*i2+j;
+                addConstraint(varIdx,var2Idx,lambdaDifferent);
+            }
+
+            // Column Constraint
+            for (int j2=j+1; j<nInt; j++) {
+                int var2Idx = nInt*i+j2;
+                addConstraint(varIdx,var2Idx,lambdaDifferent);
+            }
+
+            // Square Constraint
+            for (int i2=i; i2<sqrLen*(i/sqrLen+1); i2++) {
+                for (int j2=j; j2<sqrLen*(j/sqrLen+1); j2++) {
+                    if (i2==i && j2==j) continue;
+                    int var2Idx = nInt*i2+j2;
+                    addConstraint(varIdx,var2Idx,lamdaDifferent);
+                }
             }
         }
     }

@@ -188,7 +188,7 @@ void CSP::init(SudokuProblem problem) {
         for (unsigned int j=0; j<n; j++) {
             int varIdx = int(n*i+j);
             addVariable(varIdx);
-            if (problem.grid[i][j] <= 0) {
+            if (problem.grid[i][j] > 0) {
                 assert(problem.grid[i][j] <= nInt);
                 addVariableValue(varIdx,problem.grid[i][j]);
                 continue;
@@ -207,13 +207,13 @@ void CSP::init(SudokuProblem problem) {
             int varIdx = nInt*i+j;
 
             // Line constraint
-            for (int i2=i+1; i2<nInt; i++) {
+            for (int i2=i+1; i2<nInt; i2++) {
                 int var2Idx = nInt*i2+j;
                 addConstraint(varIdx,var2Idx,lambdaDifferent);
             }
 
             // Column Constraint
-            for (int j2=j+1; j<nInt; j++) {
+            for (int j2=j+1; j2<nInt; j2++) {
                 int var2Idx = nInt*i+j2;
                 addConstraint(varIdx,var2Idx,lambdaDifferent);
             }
@@ -233,7 +233,7 @@ void CSP::init(SudokuProblem problem) {
 void CSP::cleanConstraints(){
     for (const auto& [x,xConstraints] : constraints) {
         for (const auto& [y,xyConstraint] : xConstraints) {
-            for (const auto& [a,bSet] : xyConstraint) {
+            for (const auto& [a,bSet] : xyConstraint.getConstraints()) {
                 if (!isInDomain(x,a)) {
                     for (int b : bSet) {
                         removeConstraintValuePair(x,y,a,b);

@@ -52,7 +52,7 @@ public:
         auto begin() {return domain.begin();}
         auto end() {return domain.end();}
     };
-    DomainIterator getDomain(int var) {return DomainIterator(domains.at(var));}
+    DomainIterator getDomain(int var) const{return DomainIterator(domains.at(var));}
 
     bool feasible(const std::unordered_map<int,int>& partSol) const;
     // Check if the added variable do not produce infeasibility with the given value

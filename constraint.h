@@ -22,6 +22,16 @@ public:
     bool feasible(int a, int b) const {return list.count(a)>0 && list.at(a).count(b);}
     bool feasible(const std::unordered_map<int,int>& partSol) const{return feasible(partSol.at(x),partSol.at(y));}
 
+    struct ConstraintIterator {
+
+        const std::unordered_map<int, std::unordered_set<int>>& constraint;
+
+        ConstraintIterator(const std::unordered_map<int, std::unordered_set<int>>& _domain) : constraint(_domain) {};
+        auto begin() {return constraint.begin();}
+        auto end() {return constraint.end();}
+    };
+    ConstraintIterator getConstraints() const {return ConstraintIterator(list);}
+
     // Check if x=value is supported by y in this constraint
     // assuming the domain of y is up to date regarding this constraint 
     bool isSupported(int value) const {return list.count(value);}

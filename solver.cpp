@@ -41,11 +41,8 @@ bool Solver::solve() {
     unsetVariables.erase(x);
 
     for (int a : problem.getDomain(x)) {
+        if (!forwardChecking(x, a)) continue;
         fixVarValue(x, a);
-        if (!forwardChecking(x, a)) {
-            unfixVarValue(x);
-            continue;
-        }
         if (solve()) return true;
         stepBack();
         unfixVarValue(x);

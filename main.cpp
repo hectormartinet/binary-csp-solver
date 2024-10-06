@@ -4,7 +4,7 @@
 #include "solver.h"
 
 int main() {
-    int n=50;
+    int n=30;
     clock_t time_req = clock();
 
     CSP queenProblem;

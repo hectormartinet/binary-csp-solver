@@ -62,6 +62,8 @@ public:
     void init(ColorProblem problem, int nbColors);
     void init(QueenProblem problem);
     void init(SudokuProblem problem);
+
+    void cleanConstraints();
     
     void initAC4();
     std::pair<std::unordered_map<int,std::unordered_map<int,std::unordered_map<int,int>>>, std::vector<std::pair<int,int>>> AC4();

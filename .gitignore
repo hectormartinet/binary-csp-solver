@@ -32,7 +32,7 @@
 *.app
 
 # Instances
-graph_color_instances/*
+instances/*
 
 # VsCode
 .vscode/*

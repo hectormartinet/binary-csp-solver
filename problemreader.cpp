@@ -37,3 +37,25 @@ ColorProblem ProblemReader::readColorProblem(std::string path) {
     }
     return problem;
 }
+
+SudokuProblem ProblemReader::readSudokuProblem(std::string path) {
+    unsigned int n = 9;
+    std::ifstream inputFile(path);
+    SudokuProblem problem;
+    problem.n = n;
+    
+    if (!inputFile.is_open()) {
+        std::cerr << "Cannot open file: " << path << std::endl;
+        return problem;
+    }
+
+    std::string line;
+    std::getline(inputFile, line);
+    for (unsigned int i=0; i<n; i++) {
+        problem.grid.push_back(std::vector<int>());
+        for (unsigned int j=0; j<n; j++) {
+            problem.grid.back().push_back(line[n*i+j]-'0');
+        }
+    }
+    return problem;
+}

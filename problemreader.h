@@ -9,6 +9,7 @@
 class ProblemReader {
 public:
     static ColorProblem readColorProblem(std::string path);
+    static SudokuProblem readSudokuProblem(std::string path);
 };
 
 #endif

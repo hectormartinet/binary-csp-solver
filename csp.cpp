@@ -26,6 +26,8 @@ bool CSP::isInDomain(int var, int a) {
 
 void CSP::fixValue(int var, int a) {
     assert(isInDomain(var, a));
+    // alternative version
+    // domains.at(var) = std::unordered_set<int> {a};
     for (int value : getDomain(var)) {
         if (value != a) {
             domains.at(var).erase(value);
@@ -51,7 +53,11 @@ void CSP::addConstraint(int i, int j, const std::function<bool(int,int)>& validP
     addConstraint(i,j);
     for (int a : domains.at(i)) {
         for (int b : domains.at(j)) {
-            if (validPair(a,b)) constraints.at(i).at(j).addPair(a,b);
+            if (validPair(a,b)) {
+                constraints.at(i).at(j).addPair(a,b);
+                // add the symmetric constraint
+                constraints.at(j).at(i).addPair(b,a);
+            }
         }
     }
 }
@@ -148,7 +154,6 @@ void CSP::init(QueenProblem problem){
             addConstraint(i,j,[&](int a, int b) {return a!=b && std::abs(a-b)!=std::abs(i-j);});
         }
     }
-    initAC4();
 }
 
 void CSP::init(ColorProblem problem, int nbColors) {
@@ -162,11 +167,11 @@ void CSP::init(ColorProblem problem, int nbColors) {
         }
     }
 
-    auto lamdaDifferent = [](int a,int b) {return a != b;};
+    auto lambdaDifferent = [](int a,int b) {return a != b;};
 
     //Constraints
     for (std::pair<int,int> edge : problem.edges) {
-        addConstraint(edge,lamdaDifferent);
+        addConstraint(edge,lambdaDifferent);
     }
 }
 
@@ -218,7 +223,21 @@ void CSP::init(SudokuProblem problem) {
                 for (int j2=j; j2<sqrLen*(j/sqrLen+1); j2++) {
                     if (i2==i && j2==j) continue;
                     int var2Idx = nInt*i2+j2;
-                    addConstraint(varIdx,var2Idx,lamdaDifferent);
+                    addConstraint(varIdx,var2Idx,lambdaDifferent);
+                }
+            }
+        }
+    }
+}
+
+void CSP::cleanConstraints(){
+    for (const auto& [x,xConstraints] : constraints) {
+        for (const auto& [y,xyConstraint] : xConstraints) {
+            for (const auto& [a,bSet] : xyConstraint) {
+                if (!isInDomain(x,a)) {
+                    for (int b : bSet) {
+                        removeConstraintValuePair(x,y,a,b);
+                    }
                 }
             }
         }

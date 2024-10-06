@@ -21,7 +21,7 @@ public:
     bool feasible() const{return problem.feasible(setVariables);}
     bool feasible(int var, int value) const {return problem.feasible(setVariables,var,value);}
     bool forwardChecking(int x, int a);
-    void stepBack();
+    void backOldDomains();
     bool solve();
 
     void fixVarValue(int var, int value) {setVariables.emplace(var,value);}

@@ -220,7 +220,8 @@ void CSP::init(SudokuProblem problem) {
 
             // Square Constraint
             for (int i2=i; i2<sqrLen*(i/sqrLen+1); i2++) {
-                for (int j2=j; j2<sqrLen*(j/sqrLen+1); j2++) {
+                int j_start = j%nInt ? j-1:j;
+                for (int j2=j_start; j2<sqrLen*(j/sqrLen+1); j2++) {
                     if (i2==i && j2==j) continue;
                     int var2Idx = nInt*i2+j2;
                     addConstraint(varIdx,var2Idx,lambdaDifferent);

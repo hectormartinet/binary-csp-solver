@@ -250,6 +250,20 @@ void CSP::AC4() {
     }
 }
 
+bool CSP::checkAC() {
+    cleanConstraints();
+    for (const auto& [x,xConstraints] : constraints) {
+        for (const auto& [y,xyConstraint] : xConstraints) {
+            for (int a : getDomain(x)) {
+                if (xyConstraint.supportSize(a)==0) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
 void CSP::display(bool removeSymmetry) const {
     std::cout << "VARIABLES" << std::endl;
     for (int var : variables) {

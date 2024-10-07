@@ -15,7 +15,6 @@ private:
     std::unordered_map<int,int> setVariables;
     std::unordered_set<int> unsetVariables;
     std::vector<std::vector<std::pair<int,int>>> deltaDomains;
-    std::unordered_map<int,std::unordered_map<int,Constraint>> constraints;
     unsigned int nbNodesExplored=0;
 
     std::unique_ptr<VariableChooser> varChooser;

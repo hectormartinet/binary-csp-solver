@@ -7,32 +7,65 @@ Solver::Solver(CSP _problem) : problem(_problem) {
     valueChooser = std::make_unique<CopyValueChooser>();
 }
 
-bool Solver::forwardChecking(int x, int a) {
+bool Solver::forwardChecking(int z, int d) {
     std::vector<std::pair<int,int>> modifs;
-    for (const auto& [y, Cxy] : problem.getConstraints().at(x)) {
-        if (unsetVariables.count(y)) {
-            unsigned int nbInfeasInDomain = 0;
-            for (int b : problem.getDomain(y)) {
-                if (!Cxy.feasible(a,b)) {
-                    nbInfeasInDomain++;
-                    modifs.push_back(std::make_pair(y, b));
+    std::vector<std::pair<int,int>> toFix = {std::make_pair(z, d)};
+    std::vector<int> fixedVar = {};
+    while (toFix.size() > 0) {
+        auto [x, a] = toFix.back();
+        toFix.pop_back();
+        fixVarValue(x, a);
+        fixedVar.push_back(x);
+        for (const auto& [y, Cxy] : problem.getConstraints().at(x)) {
+            if (unsetVariables.count(y)) {
+                std::vector<int> domain;
+                domain.insert(domain.end(), problem.getDomain(y).begin(), problem.getDomain(y).end());
+                for (int b : domain) {
+                    if (!Cxy.feasible(a,b)) {
+                        modifs.push_back(std::make_pair(y, b));
+                        problem.removeVariableValue(y, b);
+                    }
+                }
+                size_t domainSize = problem.sizeDomain(y);
+                if (domainSize == 0) {
+                    deltaDomains.push_back(modifs);
+                    deltaFixedValues.push_back(fixedVar);
+                    getOldProblem();
+                    return false;
+                } else if (domainSize == 1) {
+                    int c = *problem.getDomain(y).begin();
+                    toFix.push_back(std::make_pair(y,c));
                 }
             }
-            if (nbInfeasInDomain == problem.sizeDomain(y)) return false;
         }
     }
-    for (auto [y,b] : modifs) {
-        problem.removeVariableValue(y, b);
-    }
     deltaDomains.push_back(modifs);
+    deltaFixedValues.push_back(fixedVar);
     return true;
 }
 
-void Solver::backOldDomains() {
+
+void Solver::fixVarValue(int var, int value) {
+    unsetVariables.erase(var);
+    setVariables.emplace(var,value);
+    problem.fixValue(var, value);
+}
+
+void Solver::unfixVarValue(int var) {
+    setVariables.erase(var);
+    unsetVariables.emplace(var);
+}
+
+void Solver::getOldProblem() {
     for (auto [y,b] : deltaDomains.back()) {
         problem.addVariableValue(y, b);
     }
     deltaDomains.pop_back();
+
+    for (int var : deltaFixedValues.back()) {
+        unfixVarValue(var);
+    }
+    deltaFixedValues.pop_back();
 }
 
 bool Solver::presolve() {
@@ -60,18 +93,17 @@ bool Solver::presolve() {
 bool Solver::solve() {
     if (unsetVariables.empty()) return true;
     int var = varChooser->choose(problem,unsetVariables);
-    unsetVariables.erase(var);
-
-    for (int value : valueChooser->choose(problem,var)) {
+    std::vector<int> values = valueChooser->choose(problem,var);
+    for (int value : values) {
         nbNodesExplored++;
         if (!forwardChecking(var, value)) continue;
-        fixVarValue(var, value);
         if (solve()) return true;
-        backOldDomains();
-        unfixVarValue(var);
+        getOldProblem();
+    }
+    for (int value : values) {
+        problem.addVariableValue(var, value);
     }
 
-    unsetVariables.emplace(var);
     return false;
 }
 

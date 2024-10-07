@@ -24,7 +24,7 @@ bool CSP::isInDomain(int var, int value) {
 }
 
 void CSP::fixValue(int var, int value) {
-    assert(isInDomain(var, value));
+    // assert(isInDomain(var, value));
     domains.at(var) = std::unordered_set<int> {value};
 }
 

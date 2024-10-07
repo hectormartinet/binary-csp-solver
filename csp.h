@@ -45,18 +45,10 @@ public:
     void addConstraintValuePair(int x, int y, int a, int b);
     void removeConstraintValuePair(int x, int y, int a, int b);
 
-    std::unordered_set<int> getVariables() {return variables;}
-    std::unordered_map<int,std::unordered_map<int,Constraint>> getConstraints() {return constraints;}
+    const std::unordered_set<int>& getVariables() {return variables;}
+    const std::unordered_map<int,std::unordered_map<int,Constraint>>& getConstraints() {return constraints;}
    
-    struct DomainIterator {
-
-        const std::unordered_set<int>& domain;
-
-        DomainIterator(const std::unordered_set<int>& _domain) : domain(_domain) {};
-        auto begin() {return domain.begin();}
-        auto end() {return domain.end();}
-    };
-    DomainIterator getDomain(int var) const{return DomainIterator(domains.at(var));}
+    const std::unordered_set<int>& getDomain(int var) const{return domains.at(var);}
     size_t getDomainSize(int var) const{return domains.at(var).size();}
 
     bool feasible(const std::unordered_map<int,int>& partSol) const;

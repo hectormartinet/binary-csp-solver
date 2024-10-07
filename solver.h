@@ -2,6 +2,10 @@
 #define SOLVER_H_
 
 #include "csp.h"
+#include "variablechooser.h"
+#include "valuechooser.h"
+
+#include <memory>  
 
 
 class Solver {
@@ -14,8 +18,10 @@ private:
     std::unordered_map<int,std::unordered_map<int,Constraint>> constraints;
     unsigned int nbNodesExplored=0;
 
+    std::unique_ptr<VariableChooser> varChooser;
+    std::unique_ptr<ValueChooser> valueChooser;
+
 public:
-    Solver(){}
     Solver(CSP _problem);
 
     bool feasible() const{return problem.feasible(setVariables);}

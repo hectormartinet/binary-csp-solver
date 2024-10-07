@@ -3,12 +3,13 @@
 
 Solver::Solver(CSP _problem) : problem(_problem) {
     unsetVariables = problem.getVariables();
-    constraints = problem.getConstraints();
+    varChooser = std::make_unique<SmallestDomainVariableChooser>();
+    valueChooser = std::make_unique<CopyValueChooser>();
 }
 
 bool Solver::forwardChecking(int x, int a) {
     std::vector<std::pair<int,int>> modifs;
-    for (const auto& [y, Cxy] : constraints.at(x)) {
+    for (const auto& [y, Cxy] : problem.getConstraints().at(x)) {
         if (unsetVariables.count(y)) {
             unsigned int nbInfeasInDomain = 0;
             for (int b : problem.getDomain(y)) {
@@ -57,12 +58,12 @@ bool Solver::presolve() {
 }
 
 bool Solver::solve() {
-    nbNodesExplored++;
     if (unsetVariables.empty()) return true;
-    int var = *unsetVariables.begin();
+    int var = varChooser->choose(problem,unsetVariables);
     unsetVariables.erase(var);
 
-    for (int value : problem.getDomain(var)) {
+    for (int value : valueChooser->choose(problem,var)) {
+        nbNodesExplored++;
         if (!forwardChecking(var, value)) continue;
         fixVarValue(var, value);
         if (solve()) return true;

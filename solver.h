@@ -22,6 +22,7 @@ public:
     bool feasible(int var, int value) const {return problem.feasible(setVariables,var,value);}
     bool forwardChecking(int x, int a);
     void backOldDomains();
+    bool presolve();
     bool solve();
 
     void fixVarValue(int var, int value) {setVariables.emplace(var,value);}

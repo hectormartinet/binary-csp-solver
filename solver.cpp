@@ -8,11 +8,11 @@ Solver::Solver(CSP _problem) : problem(_problem) {
 
 bool Solver::forwardChecking(int x, int a) {
     std::vector<std::pair<int,int>> modifs;
-    for (const auto& [y, ijConstraint] : constraints.at(x)) {
-        if (!setVariables.count(y)) {
+    for (const auto& [y, Cxy] : constraints.at(x)) {
+        if (unsetVariables.count(y)) {
             unsigned int nbInfeasInDomain = 0;
             for (int b : problem.getDomain(y)) {
-                if (!ijConstraint.feasible(a,b)) {
+                if (!Cxy.feasible(a,b)) {
                     nbInfeasInDomain++;
                     modifs.push_back(std::make_pair(y, b));
                 }
@@ -20,18 +20,40 @@ bool Solver::forwardChecking(int x, int a) {
             if (nbInfeasInDomain == problem.sizeDomain(y)) return false;
         }
     }
-    for (std::pair<int,int> couple : modifs) {
-        problem.removeVariableValue(couple.first, couple.second);
+    for (auto [y,b] : modifs) {
+        problem.removeVariableValue(y, b);
     }
     deltaDomains.push_back(modifs);
     return true;
 }
 
 void Solver::backOldDomains() {
-    for (std::pair<int, int> couple : deltaDomains.back()) {
-        problem.addVariableValue(couple.first, couple.second);
+    for (auto [y,b] : deltaDomains.back()) {
+        problem.addVariableValue(y, b);
     }
     deltaDomains.pop_back();
+}
+
+bool Solver::presolve() {
+    for (int var: problem.getVariables()) {
+        switch (problem.getDomainSize(var))
+        {
+        case 0:
+            return false;
+        case 1:
+        {
+            int value =*problem.getDomain(var).begin(); // not pretty
+            if (!feasible(var,value)) return false;
+            unsetVariables.erase(var);
+            setVariables.emplace(var,value);
+            break;
+        }
+        default:
+            break;
+        }
+    }
+    std::cout << "Presolved fixed " << setVariables.size()<< "/" << problem.nbVar() << " variables"<<std::endl;
+    return true;
 }
 
 bool Solver::solve() {

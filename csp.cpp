@@ -15,9 +15,8 @@ void CSP::addVariableValue(int var, int value) {
     domains.at(var).emplace(value);
 }
 
-void CSP::removeVariableValue(int var, int value) {
-    if (domains.count(var)==0) return;
-    domains.at(var).erase(value);
+bool CSP::removeVariableValue(int var, int value) {
+    return domains.at(var).erase(value);
 }
 
 bool CSP::isInDomain(int var, int a) {
@@ -70,37 +69,6 @@ void CSP::addConstraintValuePair(int i, int j, int a, int b) {
 void CSP::removeConstraintValuePair(int i, int j, int a, int b) {
     constraints.at(i).at(j).removePair(a,b);
     constraints.at(j).at(i).removePair(b,a);
-}
-
-void CSP::initCount(int i, int j, int a, int val) {
-    if (counts.count(i) == 0)
-        counts.emplace(i,std::unordered_map<int,std::unordered_map<int, int>>());
-    if (counts.at(i).count(j) == 0)
-        counts.at(i).emplace(j,std::unordered_map<int, int>());
-    if (counts.at(i).at(j).count(a)==0)
-        counts.at(i).at(j).emplace(a, val);
-    else 
-        counts.at(i).at(j).at(a) = val;
-}
-
-void CSP::reduceCount(int i, int j, int a, int val) {
-    counts.at(i).at(j).at(a)-=val;
-}
-
-int CSP::getCount(int i, int j, int a) {
-    return counts.at(i).at(j).at(a);
-}
-
-void CSP::addSupport(int i, int a, int j, int b) {
-    if (support.count(j) == 0)
-        support.emplace(j,std::unordered_map<int,std::vector<std::pair<int,int>>>());
-    if (support.at(j).count(b) == 0)
-        support.at(j).emplace(b,std::vector<std::pair<int, int>>());
-    support.at(j).at(b).push_back(std::make_pair(i, a));
-}
-
-void CSP::addAC4List(int i, int a) {
-    AC4List.push_back(std::make_pair(i, a));
 }
 
 bool CSP::feasible(const std::unordered_map<int,int>& partSol) const{
@@ -219,10 +187,10 @@ void CSP::init(SudokuProblem problem) {
             }
 
             // Square Constraint
-            for (int i2=i; i2<sqrLen*(i/sqrLen+1); i2++) {
-                int j_start = j%nInt ? j-1:j;
+            for (int i2=i+1; i2<sqrLen*(i/sqrLen+1); i2++) {
+                int j_start = j-j%sqrLen;
                 for (int j2=j_start; j2<sqrLen*(j/sqrLen+1); j2++) {
-                    if (i2==i && j2==j) continue;
+                    if (j2==j) continue;
                     int var2Idx = nInt*i2+j2;
                     addConstraint(varIdx,var2Idx,lambdaDifferent);
                 }
@@ -246,53 +214,40 @@ void CSP::cleanConstraints(){
 }
 
 void CSP::initAC4() {
-    for (const auto& [x,iConstraints] : constraints) {
-        for (const auto& [y,ijConstraint] : iConstraints) {
+    cleanConstraints();
+    for (const auto& [x,xConstraints] : constraints) {
+        for (const auto& [y,xyConstraint] : xConstraints) {
             for (int a : getDomain(x)) {
-                int total = 0;
-                for (int b : getDomain(y)) {
-                    if (ijConstraint.feasible(a,b)) {
-                        total++;
-                        addSupport(x, a, y, b);
-                    }
-                }
-                initCount(x, y, a, total);
-                if (total==0) {
-                    removeVariableValue(x, a);
+                if (xyConstraint.supportSize(a)==0) {
                     addAC4List(x, a);
                 }
-            }
-        }
-    }   
-}
-
-std::pair<std::unordered_map<int,std::unordered_map<int,std::unordered_map<int,int>>>, std::vector<std::pair<int,int>>> CSP::AC4() {
-    std::unordered_map<int, std::unordered_map<int,std::unordered_map<int,int>>> initCount;
-    std::vector<std::pair<int,int>> removedValues;
-    while (AC4List.size() > 0) {
-        std::pair<int,int> firstCouple = AC4List.front();
-        int y = firstCouple.first;
-        int b = firstCouple.second;
-        AC4List.erase(AC4List.begin());
-        if (support.count(y) != 0 && support.at(y).count(b) != 0) {
-            for (std::pair<int,int> secondCouple : support.at(y).at(b)){
-                int x = secondCouple.first;
-                int a = secondCouple.second;
-                if (!initCount.count(x)) initCount.emplace(x, std::unordered_map<int, std::unordered_map<int,int>>());
-                if (!initCount.at(x).count(y)) initCount.at(x).emplace(y, std::unordered_map<int,int>());
-                if (!initCount.at(x).at(y).count(a)) initCount.at(x).at(y).emplace(a, getCount(x, y, a));
-
-                reduceCount(x, y, a, 1);
-                if (getCount(x, y, a) == 0 && isInDomain(x, a)) {
-                    removeVariableValue(x, a);
-                    addAC4List(x, a);
-                    removedValues.push_back(std::make_pair(x, a));
-                }
-
             }
         }
     }
-    return std::make_pair(initCount, removedValues);
+    for (auto [x,a]:AC4List) {   
+        removeVariableValue(x,a);
+    }
+}
+
+void CSP::AC4() {
+    while(!AC4List.empty()) {
+        auto [y,b] = *AC4List.begin();
+        removeAC4List(y,b);
+        std::vector<std::pair<int,int>> toPropagate;
+        for (const auto& [x, yxConstraint]:constraints.at(y)) {
+            if (yxConstraint.supportSize(b)==0) continue;
+            for (int a:yxConstraint.getConstraints(b)) {
+                toPropagate.push_back(std::make_pair(x,a));
+            }
+        }
+        for (auto [x,a] : toPropagate) {
+            removeConstraintValuePair(x,y,a,b);
+            // Lazy evaluation
+            if (constraints.at(x).at(y).supportSize(a) == 0 && removeVariableValue(x,a)) {
+                addAC4List(x,a);
+            }
+        }
+    }
 }
 
 void CSP::display(bool removeSymmetry) const {

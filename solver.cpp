@@ -7,40 +7,38 @@ Solver::Solver(CSP _problem) : problem(_problem) {
     valueChooser = std::make_unique<CopyValueChooser>();
 }
 
+bool Solver::removeVariableValue(int x, int a) {
+    deltaDomains.back().push_back(std::make_pair(x, a));
+    problem.removeVariableValue(x, a);
+    switch (problem.getDomainSize(x)) 
+    {
+    case 1: 
+        fixVarValue(x,a);
+        break;
+    case 0: 
+        return false;
+    default: 
+        break;
+    }
+    return true;
+}
+
 bool Solver::forwardChecking(int z, int d) {
-    std::vector<std::pair<int,int>> modifs;
     std::vector<std::pair<int,int>> toFix = {std::make_pair(z, d)};
-    std::vector<int> fixedVar = {};
     while (toFix.size() > 0) {
         auto [x, a] = toFix.back();
         toFix.pop_back();
-        fixVarValue(x, a);
-        fixedVar.push_back(x);
         for (const auto& [y, Cxy] : problem.getConstraints().at(x)) {
             if (unsetVariables.count(y)) {
                 std::vector<int> domain;
                 domain.insert(domain.end(), problem.getDomain(y).begin(), problem.getDomain(y).end());
                 for (int b : domain) {
-                    if (!Cxy.feasible(a,b)) {
-                        modifs.push_back(std::make_pair(y, b));
-                        problem.removeVariableValue(y, b);
-                    }
+                    if (!Cxy.feasible(a,b) && !removeVariableValue(y, b)) return false;
                 }
-                size_t domainSize = problem.sizeDomain(y);
-                if (domainSize == 0) {
-                    deltaDomains.push_back(modifs);
-                    deltaFixedValues.push_back(fixedVar);
-                    getOldProblem();
-                    return false;
-                } else if (domainSize == 1) {
-                    int c = *problem.getDomain(y).begin();
-                    toFix.push_back(std::make_pair(y,c));
-                }
+                if (!unsetVariables.count(y)) toFix.push_back(std::make_pair(y,*problem.getDomain(y).begin()));
             }
         }
     }
-    deltaDomains.push_back(modifs);
-    deltaFixedValues.push_back(fixedVar);
     return true;
 }
 
@@ -49,6 +47,7 @@ void Solver::fixVarValue(int var, int value) {
     unsetVariables.erase(var);
     setVariables.emplace(var,value);
     problem.fixValue(var, value);
+    deltaFixedVars.back().push_back(var);
 }
 
 void Solver::unfixVarValue(int var) {
@@ -56,16 +55,16 @@ void Solver::unfixVarValue(int var) {
     unsetVariables.emplace(var);
 }
 
-void Solver::getOldProblem() {
+void Solver::flashback() {
     for (auto [y,b] : deltaDomains.back()) {
         problem.addVariableValue(y, b);
     }
     deltaDomains.pop_back();
 
-    for (int var : deltaFixedValues.back()) {
+    for (int var : deltaFixedVars.back()) {
         unfixVarValue(var);
     }
-    deltaFixedValues.pop_back();
+    deltaFixedVars.pop_back();
 }
 
 bool Solver::presolve() {
@@ -90,19 +89,34 @@ bool Solver::presolve() {
     return true;
 }
 
-bool Solver::solve() {
-    if (unsetVariables.empty()) return true;
-    int var = varChooser->choose(problem,unsetVariables);
-    std::vector<int> values = valueChooser->choose(problem,var);
-    for (int value : values) {
-        nbNodesExplored++;
-        if (!forwardChecking(var, value)) continue;
-        if (solve()) return true;
-        getOldProblem();
-    }
+void Solver::branchOnVar(int var, int value) {
+    nbNodesExplored++;
+    deltaFixedVars.push_back({});
+    deltaDomains.push_back({});
+    fixVarValue(var, value);
+}
+
+void Solver::unbranchVar(int var, std::vector<int> values) {
     for (int value : values) {
         problem.addVariableValue(var, value);
     }
+}
+
+bool Solver::solve() {
+    if (unsetVariables.empty()) return true;
+    int var = chooseVar();
+    std::vector<int> values = chooseValue(var);
+    for (int value : values) {
+        branchOnVar(var, value);
+        bool feasibility = forwardChecking(var, value);
+        if (!feasibility) {
+            flashback();
+            continue;
+        }
+        if (solve()) return true;
+        flashback();
+    }
+    unbranchVar(var, values);
 
     return false;
 }

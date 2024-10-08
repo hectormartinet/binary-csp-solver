@@ -15,7 +15,7 @@ private:
     std::unordered_map<int,int> setVariables;
     std::unordered_set<int> unsetVariables;
     std::vector<std::vector<std::pair<int,int>>> deltaDomains;
-    std::vector<std::vector<int>> deltaFixedValues;
+    std::vector<std::vector<int>> deltaFixedVars;
     unsigned int nbNodesExplored=0;
 
     std::unique_ptr<VariableChooser> varChooser;
@@ -27,12 +27,17 @@ public:
     bool feasible() const{return problem.feasible(setVariables);}
     bool feasible(int var, int value) const {return problem.feasible(setVariables,var,value);}
     bool forwardChecking(int x, int a);
-    void getOldProblem();
+    void flashback();
+    void branchOnVar(int var, int value);
+    void unbranchVar(int var, std::vector<int> values);
     bool presolve();
     bool solve();
+    int chooseVar() {return varChooser->choose(problem,unsetVariables);}
+    std::vector<int> chooseValue(int var) {return valueChooser->choose(problem,var);}
 
     void fixVarValue(int var, int value);
     void unfixVarValue(int var);
+    bool removeVariableValue(int var, int value);
     std::unordered_map<int,int> retrieveSolution() const{return setVariables;}
     unsigned int getNbNodesExplored() const{return nbNodesExplored;}
     void displaySolution() const;

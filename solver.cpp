@@ -15,7 +15,7 @@ bool Solver::removeVariableValue(int x, int a) {
     case 1:
     {
         int c = *problem.getDomain(x).begin();
-        fixVarValue(x,c);
+        lazyPropagateList.push_back(std::make_pair(x,c));
         break;
     }
     case 0: 
@@ -40,9 +40,10 @@ bool Solver::forwardChecking(int x, int a) {
 }
 
 bool Solver::lazyPropagate(int z, int d) {
-    lazyPropagateList.push_back(std::make_pair(z, d));
+    lazyPropagateList.push_back(std::make_pair(z,d));
     while (lazyPropagateList.size() > 0) {
         auto [x, a] = lazyPropagateList.back();
+        fixVarValue(x,a);
         lazyPropagateList.pop_back();
         bool feasible = forwardChecking(x, a);
         if (!feasible) {
@@ -55,7 +56,7 @@ bool Solver::lazyPropagate(int z, int d) {
 
 
 void Solver::fixVarValue(int var, int value) {
-    unsetVariables.erase(var);
+    if (!unsetVariables.erase(var)) return;
     setVariables.emplace(var,value);
     problem.fixValue(var, value);
     deltaFixedVars.back().push_back(var);

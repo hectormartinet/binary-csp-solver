@@ -12,9 +12,12 @@ bool Solver::removeVariableValue(int x, int a) {
     problem.removeVariableValue(x, a);
     switch (problem.getDomainSize(x)) 
     {
-    case 1: 
-        fixVarValue(x,a);
+    case 1:
+    {
+        int c = *problem.getDomain(x).begin();
+        fixVarValue(x,c);
         break;
+    }
     case 0: 
         return false;
     default: 
@@ -23,20 +26,28 @@ bool Solver::removeVariableValue(int x, int a) {
     return true;
 }
 
-bool Solver::forwardChecking(int z, int d) {
-    std::vector<std::pair<int,int>> toFix = {std::make_pair(z, d)};
-    while (toFix.size() > 0) {
-        auto [x, a] = toFix.back();
-        toFix.pop_back();
-        for (const auto& [y, Cxy] : problem.getConstraints().at(x)) {
-            if (unsetVariables.count(y)) {
-                std::vector<int> domain;
-                domain.insert(domain.end(), problem.getDomain(y).begin(), problem.getDomain(y).end());
-                for (int b : domain) {
-                    if (!Cxy.feasible(a,b) && !removeVariableValue(y, b)) return false;
-                }
-                if (!unsetVariables.count(y)) toFix.push_back(std::make_pair(y,*problem.getDomain(y).begin()));
+bool Solver::forwardChecking(int x, int a) {
+    for (const auto& [y, Cxy] : problem.getConstraints().at(x)) {
+        if (unsetVariables.count(y)) {
+            std::vector<int> domain;
+            domain.insert(domain.end(), problem.getDomain(y).begin(), problem.getDomain(y).end());
+            for (int b : domain) {
+                if (!Cxy.feasible(a,b) && !removeVariableValue(y, b)) return false;
             }
+        }
+    }
+    return true;
+}
+
+bool Solver::lazyPropagate(int z, int d) {
+    lazyPropagateList.push_back(std::make_pair(z, d));
+    while (lazyPropagateList.size() > 0) {
+        auto [x, a] = lazyPropagateList.back();
+        lazyPropagateList.pop_back();
+        bool feasible = forwardChecking(x, a);
+        if (!feasible) {
+            lazyPropagateList.clear();
+            return false;
         }
     }
     return true;
@@ -48,6 +59,7 @@ void Solver::fixVarValue(int var, int value) {
     setVariables.emplace(var,value);
     problem.fixValue(var, value);
     deltaFixedVars.back().push_back(var);
+    lazyPropagateList.push_back(std::make_pair(var, value));
 }
 
 void Solver::unfixVarValue(int var) {
@@ -108,7 +120,7 @@ bool Solver::solve() {
     std::vector<int> values = chooseValue(var);
     for (int value : values) {
         branchOnVar(var, value);
-        bool feasibility = forwardChecking(var, value);
+        bool feasibility = lazyPropagate(var, value);
         if (!feasibility) {
             flashback();
             continue;

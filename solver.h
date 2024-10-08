@@ -16,6 +16,7 @@ private:
     std::unordered_set<int> unsetVariables;
     std::vector<std::vector<std::pair<int,int>>> deltaDomains;
     std::vector<std::vector<int>> deltaFixedVars;
+    std::vector<std::pair<int,int>> lazyPropagateList;
     unsigned int nbNodesExplored=0;
 
     std::unique_ptr<VariableChooser> varChooser;
@@ -26,6 +27,7 @@ public:
 
     bool feasible() const{return problem.feasible(setVariables);}
     bool feasible(int var, int value) const {return problem.feasible(setVariables,var,value);}
+    bool lazyPropagate(int x, int a);
     bool forwardChecking(int x, int a);
     void flashback();
     void branchOnVar(int var, int value);

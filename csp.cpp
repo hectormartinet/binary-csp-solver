@@ -194,12 +194,8 @@ void CSP::init(SudokuProblem problem) {
 void CSP::cleanConstraints(){
     for (const auto& [x,Cx] : constraints) {
         for (const auto& [y,Cxy] : Cx) {
-            for (const auto& [a,bSet] : Cxy.getConstraints()) {
-                if (!isInDomain(x,a)) {
-                    for (int b : bSet) {
-                        removeConstraintValuePair(x,y,a,b);
-                    }
-                }
+            for (auto [a,b] : Cxy.getUselessPairs(getDomain(x))) {
+                removeConstraintValuePair(x,y,a,b);
             }
         }
     }
@@ -210,7 +206,7 @@ void CSP::initAC4() {
     for (const auto& [x,Cx] : constraints) {
         for (const auto& [y,Cxy] : Cx) {
             for (int a : getDomain(x)) {
-                if (Cxy.supportSize(a)==0) {
+                if (Cxy.getSupportSize(a)==0) {
                     addAC4List(x, a);
                 }
             }
@@ -226,16 +222,16 @@ void CSP::AC4() {
         auto [y,b] = *AC4List.begin();
         removeAC4List(y,b);
         std::vector<std::pair<int,int>> toPropagate;
-        for (const auto& [x, yxConstraint]:constraints.at(y)) {
-            if (yxConstraint.supportSize(b)==0) continue;
-            for (int a:yxConstraint.getConstraints(b)) {
+        for (const auto& [x, Cyx]:constraints.at(y)) {
+            if (Cyx.getSupportSize(b)==0) continue;
+            for (int a:Cyx.getSupport(b)) {
                 toPropagate.push_back(std::make_pair(x,a));
             }
         }
         for (auto [x,a] : toPropagate) {
             removeConstraintValuePair(x,y,a,b);
             // Lazy evaluation
-            if (constraints.at(x).at(y).supportSize(a) == 0 && removeVariableValue(x,a)) {
+            if (constraints.at(x).at(y).getSupportSize(a) == 0 && removeVariableValue(x,a)) {
                 addAC4List(x,a);
             }
         }
@@ -247,7 +243,7 @@ bool CSP::checkAC() {
     for (const auto& [x,Cx] : constraints) {
         for (const auto& [y,Cxy] : Cx) {
             for (int a : getDomain(x)) {
-                if (Cxy.supportSize(a)==0) {
+                if (Cxy.getSupportSize(a)==0) {
                     return false;
                 }
             }

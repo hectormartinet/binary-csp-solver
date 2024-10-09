@@ -20,6 +20,19 @@ void Constraint::removePair(int a, int b) {
     list.at(a).erase(b);
 }
 
+std::vector<std::pair<int,int>> Constraint::getUselessPairs(const std::unordered_set<int>& Dx) const{
+    std::vector<std::pair<int,int>> uselessPairs;
+    for (const auto& [a,bSet]:list) {
+        if (!Dx.count(a)) {
+            for (int b : bSet) {
+                uselessPairs.push_back(std::make_pair(a,b));
+            }
+        }
+    }
+    return uselessPairs;
+}
+
+
 void Constraint::display() const {
     std::cout << x << "," << y << ":";
     for (const auto& [a,bSet] : list) {

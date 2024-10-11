@@ -6,12 +6,13 @@
 
 class ValueChooser {
 public:
+    virtual ~ValueChooser(){};
     virtual std::vector<int> choose(const CSP& problem, int var)const=0;
 };
 
 class CopyValueChooser : public ValueChooser {
 protected:
-    virtual std::vector<int> choose(const CSP& problem, int var) const{
+    std::vector<int> choose(const CSP& problem, int var) const{
         std::vector<int> order;
         order.insert(order.end(), problem.getDomain(var).begin(), problem.getDomain(var).end());
         return order;

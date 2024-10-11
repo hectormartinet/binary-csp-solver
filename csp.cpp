@@ -1,6 +1,7 @@
 #include <cmath>
 #include <iostream>
 #include <cassert>
+#include <typeinfo>
 
 #include "csp.h"
 
@@ -10,7 +11,7 @@ CSP::CSP(const CSP& csp) {
     for (const auto& [x,Cx]: csp.getConstraints()) {
         constraints.emplace(x,std::unordered_map<int,std::unique_ptr<Constraint>>());
         for (const auto& [y,Cxy]: Cx) {
-            constraints.at(x).emplace(y,std::make_unique<Constraint>(*Cxy)); // Copy unique ptrs
+            constraints.at(x).emplace(y,Cxy->clone()); // Copy unique ptrs
         }
     }
 }
@@ -44,13 +45,13 @@ void CSP::addConstraint(int x, int y) {
     if (constraints.count(x) == 0)
         constraints.emplace(x,std::unordered_map<int,std::unique_ptr<Constraint>>());
     if (constraints.at(x).count(y) == 0)
-        constraints.at(x).emplace(y,std::make_unique<Constraint>(x,y));
+        constraints.at(x).emplace(y,std::make_unique<ExtensiveConstraint>(x,y));
     
     // add the symmetric constraint
     if (constraints.count(y) == 0)
         constraints.emplace(y,std::unordered_map<int,std::unique_ptr<Constraint>>());
     if (constraints.at(y).count(x) == 0)
-        constraints.at(y).emplace(x,std::make_unique<Constraint>(y,x));
+        constraints.at(y).emplace(x,std::make_unique<ExtensiveConstraint>(y,x));
 }
 
 void CSP::addConstraint(int x, int y, const std::function<bool(int,int)>& validPair) {
@@ -183,13 +184,13 @@ void CSP::init(SudokuProblem problem) {
                 addConstraint(varIdx,var2Idx,lambdaDifferent);
             }
 
-            // Column Constraint
+            // Column constraint
             for (int j2=j+1; j2<nInt; j2++) {
                 int var2Idx = nInt*i+j2;
                 addConstraint(varIdx,var2Idx,lambdaDifferent);
             }
 
-            // Square Constraint
+            // Square constraint
             for (int i2=i+1; i2<sqrLen*(i/sqrLen+1); i2++) {
                 int j_start = j-j%sqrLen;
                 for (int j2=j_start; j2<sqrLen*(j/sqrLen+1); j2++) {

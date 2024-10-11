@@ -4,17 +4,45 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <memory>
 
-class Constraint{
+class Constraint {
 
-private:
+public:
+    int x;
+    int y;
+
+    virtual ~Constraint(){}
+    
+    virtual std::unique_ptr<Constraint> clone()=0;
+
+    virtual void addPair(int a, int b)=0;
+    virtual void removePair(int a, int b)=0;
+    
+    virtual bool feasible(int a, int b) const=0;
+    virtual bool feasible(const std::unordered_map<int,int>& partSol) const=0;
+
+    // Get pairs where x=a is not in the domain Dx in input
+    virtual std::vector<std::pair<int,int>> getUselessPairs(const std::unordered_set<int>& Dx) const=0;
+
+    virtual const std::unordered_set<int>& getSupport(int a) const=0;
+    virtual size_t getSupportSize(int value) const=0;
+
+    virtual void display() const=0;
+};
+
+class ExtensiveConstraint : public Constraint {
+
+protected:
     int x;
     int y;
     std::unordered_map<int, std::unordered_set<int>> list;
 
 public:
-    Constraint(int _x, int _y): x{_x}, y{_y} {};
-    Constraint(int _x, int _y, const std::vector<std::pair<int,int>>& pairs);
+    ExtensiveConstraint(int _x, int _y): x{_x}, y{_y} {};
+    ExtensiveConstraint(int _x, int _y, const std::vector<std::pair<int,int>>& pairs);
+
+    std::unique_ptr<Constraint> clone() {return std::unique_ptr<ExtensiveConstraint>(new ExtensiveConstraint{*this});}
 
     void addPair(int a, int b);
     void removePair(int a, int b);

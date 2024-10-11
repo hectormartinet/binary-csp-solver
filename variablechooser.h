@@ -12,7 +12,7 @@ public:
 
 class RandomVariableChooser : public VariableChooser {
 protected:
-    virtual int choose(const CSP&, const std::unordered_set<int>& variables) const{
+    int choose(const CSP&, const std::unordered_set<int>& variables) const{
         int idx = rand()%int(variables.size());
         int i = 0;
         for (int var : variables) {
@@ -25,7 +25,7 @@ protected:
 
 class SmallestDomainVariableChooser : public VariableChooser {
 protected:
-    virtual int choose(const CSP& problem, const std::unordered_set<int>& variables) const{
+    int choose(const CSP& problem, const std::unordered_set<int>& variables) const{
         int best_var = 0;
         size_t best_size = INT_MAX;
         for (int var : variables) {

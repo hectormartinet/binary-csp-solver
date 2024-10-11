@@ -4,6 +4,17 @@
 
 #include "csp.h"
 
+CSP::CSP(const CSP& csp) {
+    variables = csp.getVariables();
+    domains = csp.getDomains();
+    for (const auto& [x,Cx]: csp.getConstraints()) {
+        constraints.emplace(x,std::unordered_map<int,std::unique_ptr<Constraint>>());
+        for (const auto& [y,Cxy]: Cx) {
+            constraints.at(x).emplace(y,std::make_unique<Constraint>(*Cxy)); // Copy unique ptrs
+        }
+    }
+}
+
 void CSP::addVariable(int var) {
     variables.emplace(var);
     if (domains.count(var) == 0)
@@ -31,15 +42,15 @@ void CSP::fixValue(int var, int value) {
 void CSP::addConstraint(int x, int y) {
     assert(x!=y);
     if (constraints.count(x) == 0)
-        constraints.emplace(x,std::unordered_map<int,Constraint>());
+        constraints.emplace(x,std::unordered_map<int,std::unique_ptr<Constraint>>());
     if (constraints.at(x).count(y) == 0)
-        constraints.at(x).emplace(y,Constraint(x,y));
+        constraints.at(x).emplace(y,std::make_unique<Constraint>(x,y));
     
     // add the symmetric constraint
     if (constraints.count(y) == 0)
-        constraints.emplace(y,std::unordered_map<int,Constraint>());
+        constraints.emplace(y,std::unordered_map<int,std::unique_ptr<Constraint>>());
     if (constraints.at(y).count(x) == 0)
-        constraints.at(y).emplace(x,Constraint(y,x));
+        constraints.at(y).emplace(x,std::make_unique<Constraint>(y,x));
 }
 
 void CSP::addConstraint(int x, int y, const std::function<bool(int,int)>& validPair) {
@@ -54,13 +65,13 @@ void CSP::addConstraint(int x, int y, const std::function<bool(int,int)>& validP
 }
 
 void CSP::addConstraintValuePair(int x, int y, int a, int b) {
-    constraints.at(x).at(y).addPair(a,b);
-    constraints.at(y).at(x).addPair(b,a);// add symmetric constraint values
+    constraints.at(x).at(y)->addPair(a,b);
+    constraints.at(y).at(x)->addPair(b,a);// add symmetric constraint values
 }
 
 void CSP::removeConstraintValuePair(int x, int y, int a, int b) {
-    constraints.at(x).at(y).removePair(a,b);
-    constraints.at(y).at(x).removePair(b,a);// remove symmetric constraint values
+    constraints.at(x).at(y)->removePair(a,b);
+    constraints.at(y).at(x)->removePair(b,a);// remove symmetric constraint values
 }
 
 bool CSP::feasible(const std::unordered_map<int,int>& partSol) const{
@@ -77,7 +88,7 @@ bool CSP::feasible(const std::unordered_map<int,int>& partSol) const{
         for (const auto& [y,Cxy] : Cx) {
             if (x>y) continue; // do not check the symmetric version of the constraint
             if (partSol.count(y)==0) continue;
-            if (!Cxy.feasible(partSol)) return false;
+            if (!Cxy->feasible(partSol)) return false;
         }
     }
 
@@ -91,7 +102,7 @@ bool CSP::feasible(const std::unordered_map<int,int>& partSol, int var, int valu
     
     for (const auto& [j,constraint] : constraints.at(var)) {
         if (partSol.count(j)==0) continue;
-        if (!constraint.feasible(value,partSol.at(j))) return false;
+        if (!constraint->feasible(value,partSol.at(j))) return false;
     }
 
     return true;
@@ -194,7 +205,7 @@ void CSP::init(SudokuProblem problem) {
 void CSP::cleanConstraints(){
     for (const auto& [x,Cx] : constraints) {
         for (const auto& [y,Cxy] : Cx) {
-            for (auto [a,b] : Cxy.getUselessPairs(getDomain(x))) {
+            for (auto [a,b] : Cxy->getUselessPairs(getDomain(x))) {
                 removeConstraintValuePair(x,y,a,b);
             }
         }
@@ -206,7 +217,7 @@ void CSP::initAC4() {
     for (const auto& [x,Cx] : constraints) {
         for (const auto& [y,Cxy] : Cx) {
             for (int a : getDomain(x)) {
-                if (Cxy.getSupportSize(a)==0) {
+                if (Cxy->getSupportSize(a)==0) {
                     addAC4List(x, a);
                 }
             }
@@ -223,15 +234,15 @@ void CSP::AC4() {
         removeAC4List(y,b);
         std::vector<std::pair<int,int>> toPropagate;
         for (const auto& [x, Cyx]:constraints.at(y)) {
-            if (Cyx.getSupportSize(b)==0) continue;
-            for (int a:Cyx.getSupport(b)) {
+            if (Cyx->getSupportSize(b)==0) continue;
+            for (int a:Cyx->getSupport(b)) {
                 toPropagate.push_back(std::make_pair(x,a));
             }
         }
         for (auto [x,a] : toPropagate) {
             removeConstraintValuePair(x,y,a,b);
             // Lazy evaluation
-            if (constraints.at(x).at(y).getSupportSize(a) == 0 && removeVariableValue(x,a)) {
+            if (constraints.at(x).at(y)->getSupportSize(a) == 0 && removeVariableValue(x,a)) {
                 addAC4List(x,a);
             }
         }
@@ -243,7 +254,7 @@ bool CSP::checkAC() {
     for (const auto& [x,Cx] : constraints) {
         for (const auto& [y,Cxy] : Cx) {
             for (int a : getDomain(x)) {
-                if (Cxy.getSupportSize(a)==0) {
+                if (Cxy->getSupportSize(a)==0) {
                     return false;
                 }
             }
@@ -272,7 +283,7 @@ void CSP::display(bool removeSymmetry) const {
     for (const auto& [x,Cx] : constraints) {
         for (const auto& [y,Cxy] : Cx) {
             if (x>y && removeSymmetry) continue;
-            Cxy.display();
+            Cxy->display();
         }
     }
     std::cout << std::endl;

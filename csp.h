@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include <functional>
+#include <memory>
 #include "constraint.h"
 #include "problemreader.h"
 
@@ -13,7 +14,7 @@ class CSP {
 private:
     std::unordered_set<int> variables;
     std::unordered_map<int,std::unordered_set<int>> domains;
-    std::unordered_map<int,std::unordered_map<int,Constraint>> constraints;
+    std::unordered_map<int,std::unordered_map<int,std::unique_ptr<Constraint>>> constraints;
     
     struct PairHash {
     public:
@@ -29,6 +30,7 @@ private:
 public:
 
     CSP(){};
+    CSP(const CSP& csp); // copy constructor
 
     std::size_t nbVar() const{return domains.size();}
     std::size_t sizeDomain(int var) const{return domains.at(var).size();}
@@ -45,8 +47,9 @@ public:
     void addConstraintValuePair(int x, int y, int a, int b);
     void removeConstraintValuePair(int x, int y, int a, int b);
 
-    const std::unordered_set<int>& getVariables() {return variables;}
-    const std::unordered_map<int,std::unordered_map<int,Constraint>>& getConstraints() {return constraints;}
+    const std::unordered_set<int>& getVariables() const{return variables;}
+    const std::unordered_map<int,std::unordered_set<int>>& getDomains() const{return domains;}
+    const std::unordered_map<int,std::unordered_map<int,std::unique_ptr<Constraint>>>& getConstraints() const{return constraints;}
    
     const std::unordered_set<int>& getDomain(int var) const{return domains.at(var);}
     size_t getDomainSize(int var) const{return domains.at(var).size();}

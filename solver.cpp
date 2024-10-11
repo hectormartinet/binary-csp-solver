@@ -32,7 +32,7 @@ bool Solver::forwardChecking(int x, int a) {
             std::vector<int> domain;
             domain.insert(domain.end(), problem.getDomain(y).begin(), problem.getDomain(y).end());
             for (int b : domain) {
-                if (!Cxy.feasible(a,b) && !removeVariableValue(y, b)) return false;
+                if (!Cxy->feasible(a,b) && !removeVariableValue(y, b)) return false;
             }
         }
     }

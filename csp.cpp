@@ -65,6 +65,24 @@ void CSP::addConstraint(int x, int y, const std::function<bool(int,int)>& validP
     }
 }
 
+void CSP::addIntensiveConstraint(int x, int y, const std::function<bool(int,int)>& validPair, bool symetricFunction) {
+    assert(x!=y);
+    if (constraints.count(x) == 0)
+        constraints.emplace(x,std::unordered_map<int,std::unique_ptr<Constraint>>());
+    if (constraints.at(x).count(y) == 0)
+        constraints.at(x).emplace(y,std::make_unique<IntensiveConstraint>(x,y,validPair));
+    
+    // add the symmetric constraint
+    if (constraints.count(y) == 0)
+        constraints.emplace(y,std::unordered_map<int,std::unique_ptr<Constraint>>());
+    if (constraints.at(y).count(x) == 0) {
+        if (symetricFunction)
+            constraints.at(y).emplace(x,std::make_unique<IntensiveConstraint>(y,x,validPair));
+        else 
+            constraints.at(y).emplace(x,std::make_unique<IntensiveConstraint>(y,x,[validPair] (int a, int b){return validPair(a,b);}));
+    }
+}
+
 void CSP::addConstraintValuePair(int x, int y, int a, int b) {
     constraints.at(x).at(y)->addPair(a,b);
     constraints.at(y).at(x)->addPair(b,a);// add symmetric constraint values

@@ -44,6 +44,8 @@ public:
     void addConstraint(int x, int y, const std::function<bool(int,int)>& validPair);
     void addConstraint(std::pair<int,int> pair) {return addConstraint(pair.first, pair.second);}
     void addConstraint(std::pair<int,int> pair, const std::function<bool(int,int)>& validPair) {return addConstraint(pair.first, pair.second, validPair);}
+    void addIntensiveConstraint(int x, int y, const std::function<bool(int,int)>& validPair, bool symetricFunction=false);
+    
     void addConstraintValuePair(int x, int y, int a, int b);
     void removeConstraintValuePair(int x, int y, int a, int b);
 

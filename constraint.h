@@ -12,6 +12,8 @@ public:
     int x;
     int y;
 
+    Constraint(){}
+    Constraint(int _x, int _y): x{_x}, y{_y}{}
     virtual ~Constraint(){}
     
     virtual std::unique_ptr<Constraint> clone()=0;
@@ -34,12 +36,10 @@ public:
 class ExtensiveConstraint : public Constraint {
 
 protected:
-    int x;
-    int y;
     std::unordered_map<int, std::unordered_set<int>> list;
 
 public:
-    ExtensiveConstraint(int _x, int _y): x{_x}, y{_y} {};
+    ExtensiveConstraint(int _x, int _y): Constraint(_x,_y) {};
     ExtensiveConstraint(int _x, int _y, const std::vector<std::pair<int,int>>& pairs);
 
     std::unique_ptr<Constraint> clone() {return std::unique_ptr<ExtensiveConstraint>(new ExtensiveConstraint{*this});}

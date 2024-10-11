@@ -3,7 +3,7 @@
 #include "constraint.h"
 
 
-ExtensiveConstraint::ExtensiveConstraint(int _x, int _y, const std::vector<std::pair<int,int>>& pairs):x{_x},y{_y} {
+ExtensiveConstraint::ExtensiveConstraint(int _x, int _y, const std::vector<std::pair<int,int>>& pairs): Constraint(_x,_y) {
     for (const auto& [a,b] : pairs) {
         addPair(a,b);
     }

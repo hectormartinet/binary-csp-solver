@@ -124,40 +124,52 @@ void Solver::solve_verbosity() {
     }
     std::cout << nbNodesExplored << " " << bestDepth << std::endl;
     std::cout << "--------------------------" << std::endl;
+}
+
+void Solver::displayModelInformation() const{
+    std::cout << std::endl;
+    std::cout << "Initial problem: ";
+    std::cout << problem.nbVar() << " variables / ";
+    std::cout << problem.nbConstraints() << " constraints" << std::endl;
+}
+
+void Solver::displaySolveInformation() const{
+    std::cout << "Launch solve with ";
+    std::cout << "verbosity=" << std::to_string(verbosity);
+    std::cout << ":"  << std::endl;
+}
+
+void Solver::displayFinalInformation() const{
     std::string a = (foundSolution) ? std::to_string(nbNodesExplored) + " nodes explored - Found solution" 
                                     : "infeasible";
     std::cout << a << std::endl;
+
+    std::cout << "Solve time: " << (float)solve_time/CLOCKS_PER_SEC << std::endl;
 }
 
 void Solver::solve() {
+    displayModelInformation();
+
     presolve();
     // problem.cleanConstraints();
     // problem.initAC4();
     // problem.AC4();
 
-    clock_t solve_time = clock();
-
-    std::cout << "Launch solve with ";
-    std::cout << "verbosity=" << std::to_string(verbosity);
-    std::cout << ":"  << std::endl;
     state = State::Solve;
+    displaySolveInformation();
+    
     std::vector<std::thread> threads;
     threads.emplace_back(std::thread(&Solver::launchSolve, this));
     if (verbosity) threads.emplace_back(std::thread(&Solver::solve_verbosity, this));
     for (auto& t : threads) t.join();
 
-    solve_time = clock() - solve_time;
-
-    if (hasFoundSolution()) {
-        std::cout << "Solve time: " << (float)solve_time/CLOCKS_PER_SEC << std::endl;
-        // displaySolution();
-    } else {
-        std::cout << "No solution found" << std::endl;
-    }
+    displayFinalInformation();
 }
 
 void Solver::launchSolve() {
+    solve_time = clock();
     foundSolution = recursiveSolve();
+    solve_time = clock() - solve_time;
     state = State::Stop;
 }
 

@@ -166,21 +166,12 @@ void CSP::init(std::string path) {
     readProblemType(path);
     switch (problemType) 
     {
-    case Problem::Queens: 
-        return init(ProblemReader::readQueenProblem(path));
-    case Problem::Color: 
-        return init(ProblemReader::readColorProblem(path), 2);
-    case Problem::Sudoku: 
-        return init(ProblemReader::readSudokuProblem(path));
+    case Problem::Queens: return init(ProblemReader::readQueenProblem(path));
+    case Problem::Color: return init(ProblemReader::readColorProblem(path), 2);
+    case Problem::Sudoku: return init(ProblemReader::readSudokuProblem(path));
     // case 3: init(ProblemReader::readSudokuProblem(path));
-    default:
-        std::cerr << "Wrong model" << path << std::endl;
+    default: std::cerr << "Wrong model" << path << std::endl;
     }
-    std::cout << std::endl;
-    std::cout << "Initial problem: ";
-    // std::cout << problemType << " / ";
-    std::cout << nbVar() << " variables / ";
-    std::cout << nConstraints << " constraints" << std::endl; 
 }
 
 void CSP::init(ColorProblem problem, int nbColors) {

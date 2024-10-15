@@ -20,13 +20,14 @@ private:
     std::vector<std::vector<std::pair<int,int>>> deltaDomains;
     std::vector<std::vector<int>> deltaFixedVars;
     std::vector<std::pair<int,int>> lazyPropagateList;
-    
+
     State state = State::Preprocess;
 
     unsigned int nbNodesExplored=0;
     int bestDepth=0;
     bool verbosity=true;
     bool foundSolution=false;
+    clock_t solve_time;
 
 
 
@@ -55,6 +56,10 @@ public:
     unsigned int getNbNodesExplored() const{return nbNodesExplored;}
     void displaySolution() const;
     bool hasFoundSolution() {return foundSolution;}
+
+    void displayModelInformation() const;
+    void displaySolveInformation() const;
+    void displayFinalInformation() const;
 
 };
 

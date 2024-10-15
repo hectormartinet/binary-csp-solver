@@ -96,7 +96,7 @@ bool Solver::presolve() {
             break;
         }
     }
-    std::cout << "Presolved fixed " << setVariables.size()<< "/" << problem.nbVar() << " variables"<<std::endl;
+    std::cout << "Presolve fixed " << setVariables.size()<< "/" << problem.nbVar() << " variables"<<std::endl;
     std::cout << std::endl;
     return true;
 }

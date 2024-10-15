@@ -69,9 +69,9 @@ public:
 
     void readProblemType(std::string path);
     void init(std::string path);
-    void init(ColorProblem problem, int nbColors);
-    void init(QueenProblem problem);
-    void init(SudokuProblem problem);
+    void init(const ColorProblem& problem);
+    void init(const QueenProblem& problem);
+    void init(const SudokuProblem& problem);
 
     void cleanConstraints();
     

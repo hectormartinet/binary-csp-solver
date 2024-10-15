@@ -46,9 +46,10 @@ void CSP::addConstraint(int x, int y) {
     assert(x!=y);
     if (constraints.count(x) == 0)
         constraints.emplace(x,std::unordered_map<int,std::unique_ptr<Constraint>>());
-    if (constraints.at(x).count(y) == 0)
+    if (constraints.at(x).count(y) == 0) {
         constraints.at(x).emplace(y,std::make_unique<ExtensiveConstraint>(x,y));
         nConstraints++;
+    }
     
     // add the symmetric constraint
     if (constraints.count(y) == 0)
@@ -72,9 +73,10 @@ void CSP::addIntensiveConstraint(int x, int y, const std::function<bool(int,int)
     assert(x!=y);
     if (constraints.count(x) == 0)
         constraints.emplace(x,std::unordered_map<int,std::unique_ptr<Constraint>>());
-    if (constraints.at(x).count(y) == 0)
+    if (constraints.at(x).count(y) == 0) {
         constraints.at(x).emplace(y,std::make_unique<IntensiveConstraint>(x,y,validPair));
         nConstraints++;
+    }
 
     // add the symmetric constraint
     if (constraints.count(y) == 0)
@@ -131,7 +133,7 @@ bool CSP::feasible(const std::unordered_map<int,int>& partSol, int var, int valu
     return true;
 }
 
-void CSP::init(QueenProblem problem){
+void CSP::init(const QueenProblem& problem){
     int n = problem.nb_queens;
 
     // Domains
@@ -169,15 +171,26 @@ void CSP::init(std::string path) {
     switch (problemType) 
     {
     case Problem::Queens: return init(ProblemReader::readQueenProblem(path));
-    case Problem::Color: return init(ProblemReader::readColorProblem(path), 2);
+    case Problem::Color: return init(ProblemReader::readColorProblem(path));
     case Problem::Sudoku: return init(ProblemReader::readSudokuProblem(path));
     // case 3: init(ProblemReader::readSudokuProblem(path));
     default: std::cerr << "Wrong model" << path << std::endl;
     }
 }
 
-void CSP::init(ColorProblem problem, int nbColors) {
-
+void CSP::init(const ColorProblem& problem) {
+    int nbColors = problem.nb_nodes;
+    nbColors = std::min(nbColors,int(0.5*(std::sqrt(4*problem.nb_edges+1))));
+    std::vector<int> degrees(problem.nb_nodes,0);
+    for (std::pair<int,int> edge : problem.edges) {
+        degrees[edge.first]++;
+        degrees[edge.second]++;
+    }
+    int degreeMax = 0;
+    for (int d:degrees) {
+        degreeMax = std::max(degreeMax, d);
+    }
+    nbColors = std::min(nbColors,degreeMax);
     // Domains
     // Conventions on files -> starting from 1
     for (int var=1; var<=problem.nb_nodes; var++) {
@@ -195,7 +208,7 @@ void CSP::init(ColorProblem problem, int nbColors) {
     }
 }
 
-void CSP::init(SudokuProblem problem) {
+void CSP::init(const SudokuProblem& problem) {
     assert(problem.grid.size() == problem.n);
     unsigned int n = problem.n;
     int nInt = int(n); // to calm down gcc warnings

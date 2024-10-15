@@ -48,6 +48,7 @@ void CSP::addConstraint(int x, int y) {
         constraints.emplace(x,std::unordered_map<int,std::unique_ptr<Constraint>>());
     if (constraints.at(x).count(y) == 0)
         constraints.at(x).emplace(y,std::make_unique<ExtensiveConstraint>(x,y));
+        nConstraints++;
     
     // add the symmetric constraint
     if (constraints.count(y) == 0)
@@ -73,6 +74,7 @@ void CSP::addIntensiveConstraint(int x, int y, const std::function<bool(int,int)
         constraints.emplace(x,std::unordered_map<int,std::unique_ptr<Constraint>>());
     if (constraints.at(x).count(y) == 0)
         constraints.at(x).emplace(y,std::make_unique<IntensiveConstraint>(x,y,validPair));
+        nConstraints++;
 
     // add the symmetric constraint
     if (constraints.count(y) == 0)

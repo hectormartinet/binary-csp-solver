@@ -190,7 +190,7 @@ void CSP::init(const ColorProblem& problem) {
     for (int d:degrees) {
         degreeMax = std::max(degreeMax, d);
     }
-    nbColors = std::min(nbColors,degreeMax);
+    nbColors = std::min(nbColors,degreeMax+1);
     // Domains
     // Conventions on files -> starting from 1
     for (int var=1; var<=problem.nb_nodes; var++) {

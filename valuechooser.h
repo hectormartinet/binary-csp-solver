@@ -19,4 +19,14 @@ protected:
     }
 };
 
+class SmallestValueChooser : public ValueChooser {
+protected:
+    std::vector<int> choose(const CSP& problem, int var) const{
+        std::vector<int> order;
+        order.insert(order.end(), problem.getDomain(var).begin(), problem.getDomain(var).end());
+        std::sort(order.begin(), order.end());
+        return order;
+    }
+};
+
 #endif

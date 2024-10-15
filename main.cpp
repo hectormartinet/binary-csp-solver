@@ -3,34 +3,36 @@
 
 #include "solver.h"
 
-int main() {
-    int n=75;
-    clock_t time_req = clock();
-    clock_t time_solve = clock();
+void test1(int a) {
+    while (true) {
+        std::cout << a << std::endl;
+    }
+}
 
-    CSP queenProblem;
-    queenProblem.init(QueenProblem{n});
-    // queenProblem.display();
-    Solver solver(queenProblem);
+int main(int argc, char** argv) {
+    if (argc < 3) {
+        std::cout << "Usage: run filePath solveMethod valueChooser variableChooser [verbosity]" << std::endl;
+        exit(1);
+    }
+    const char* modelPath = argv[1];
+    const char* verbosity = argv[2];
+    // const char* time = argv[2];
+    // std::string solveMethod = argv[2];
+    // std::string valueChooser = argv[3];
+    // std::string variableChooser = argv[4];
+    // const char* verbosity = argc > 5 ? argv[(5)] : "1";
+    
 
-    time_req = clock()- time_req;
-    std::cout << "Problem definition time: " << (float)time_req/CLOCKS_PER_SEC << std::endl;
-    if (solver.solve()) {
-        std::cout << "Explored " << solver.getNbNodesExplored() << " nodes" << std::endl;
-        std::cout << "Found solution" << std::endl;
+    CSP csp(modelPath);
+    Solver solver(csp, atoi(verbosity));
+
+    solver.solve();
+
+    if (solver.hasFoundSolution()) {
         auto sol = solver.retrieveSolution();
-        assert(queenProblem.feasible(sol));
-        solver.displaySolution();
-    } else {
-        std::cout << "No solution found" << std::endl;
+        assert(csp.feasible(sol));
     }
 
-    time_solve = clock()- time_solve;
-     std::cout << "Solve time: " << (float)time_solve/CLOCKS_PER_SEC << std::endl;
 
-    // ColorProblem instance = ProblemReader::readColorProblem("graph_color_instances/myciel3.col");
-    // CSP colorProblem;
-    // colorProblem.init(instance,3);
-    // colorProblem.display();
     return 0;
 }

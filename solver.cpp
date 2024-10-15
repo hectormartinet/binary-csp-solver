@@ -1,14 +1,14 @@
 #include "solver.h"
 #include <iostream>
 
-Solver::Solver(CSP _problem) : problem(_problem) {
+Solver::Solver(CSP _problem, bool _verbosity) : problem(_problem), verbosity(_verbosity) {
     unsetVariables = problem.getVariables();
     varChooser = std::make_unique<SmallestDomainVariableChooser>();
     valueChooser = std::make_unique<CopyValueChooser>();
 }
 
 bool Solver::removeVariableValue(int x, int a) {
-    deltaDomains.back().push_back(std::make_pair(x, a));
+    if (state == State::Solve) deltaDomains.back().push_back(std::make_pair(x, a));
     problem.removeVariableValue(x, a);
     switch (problem.getDomainSize(x)) 
     {
@@ -54,12 +54,11 @@ bool Solver::lazyPropagate(int z, int d) {
     return true;
 }
 
-
 void Solver::fixVarValue(int var, int value) {
     if (!unsetVariables.erase(var)) return;
+    if (state == State::Solve) deltaFixedVars.back().push_back(var);
     setVariables.emplace(var,value);
     problem.fixValue(var, value);
-    deltaFixedVars.back().push_back(var);
     lazyPropagateList.push_back(std::make_pair(var, value));
 }
 
@@ -90,8 +89,7 @@ bool Solver::presolve() {
         {
             int value =*problem.getDomain(var).begin(); // not pretty
             if (!feasible(var,value)) return false;
-            unsetVariables.erase(var);
-            setVariables.emplace(var,value);
+            lazyPropagate(var, value);
             break;
         }
         default:
@@ -99,6 +97,7 @@ bool Solver::presolve() {
         }
     }
     std::cout << "Presolved fixed " << setVariables.size()<< "/" << problem.nbVar() << " variables"<<std::endl;
+    std::cout << std::endl;
     return true;
 }
 
@@ -115,8 +114,57 @@ void Solver::unbranchVar(int var, std::vector<int> values) {
     }
 }
 
-bool Solver::solve() {
+void Solver::solve_verbosity() {
+    std::cout << "Nodes exp     | Best depth"  << std::endl;
+    std::cout << "--------------------------" << std::endl;
+    std::cout << "0" << std::endl;
+    while (state == State::Solve) {
+        std::cout << nbNodesExplored << " " << bestDepth << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    }
+    std::cout << nbNodesExplored << " " << bestDepth << std::endl;
+    std::cout << "--------------------------" << std::endl;
+    std::string a = (foundSolution) ? std::to_string(nbNodesExplored) + " nodes explored - Found solution" 
+                                    : "infeasible";
+    std::cout << a << std::endl;
+}
+
+void Solver::solve() {
+    presolve();
+    // problem.cleanConstraints();
+    // problem.initAC4();
+    // problem.AC4();
+
+    clock_t solve_time = clock();
+
+    std::cout << "Launch solve with ";
+    std::cout << "verbosity=" << std::to_string(verbosity);
+    std::cout << ":"  << std::endl;
+    state = State::Solve;
+    std::vector<std::thread> threads;
+    threads.emplace_back(std::thread(&Solver::launchSolve, this));
+    if (verbosity) threads.emplace_back(std::thread(&Solver::solve_verbosity, this));
+    for (auto& t : threads) t.join();
+
+    solve_time = clock() - solve_time;
+
+    if (hasFoundSolution()) {
+        std::cout << "Solve time: " << (float)solve_time/CLOCKS_PER_SEC << std::endl;
+        // displaySolution();
+    } else {
+        std::cout << "No solution found" << std::endl;
+    }
+}
+
+void Solver::launchSolve() {
+    foundSolution = recursiveSolve();
+    state = State::Stop;
+}
+
+bool Solver::recursiveSolve() {
     if (unsetVariables.empty()) return true;
+    std::size_t currentDepth = setVariables.size() + 1;
+    if (currentDepth > bestDepth) bestDepth = currentDepth;
     int var = chooseVar();
     std::vector<int> values = chooseValue(var);
     for (int value : values) {
@@ -126,7 +174,7 @@ bool Solver::solve() {
             flashback();
             continue;
         }
-        if (solve()) return true;
+        if (recursiveSolve()) return true;
         flashback();
     }
     unbranchVar(var, values);

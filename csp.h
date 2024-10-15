@@ -6,15 +6,19 @@
 #include <unordered_map>
 #include <functional>
 #include <memory>
+#include <thread>
 #include "constraint.h"
 #include "problemreader.h"
-
+enum class Problem {Queens, Color, Sudoku, Generic};
 class CSP {
 
 private:
     std::unordered_set<int> variables;
     std::unordered_map<int,std::unordered_set<int>> domains;
     std::unordered_map<int,std::unordered_map<int,std::unique_ptr<Constraint>>> constraints;
+    Problem problemType;
+    
+    unsigned int nConstraints=0;
     
     struct PairHash {
     public:
@@ -30,10 +34,12 @@ private:
 public:
 
     CSP(){};
+    CSP(std::string path){init(path);}
     CSP(const CSP& csp); // copy constructor
 
     std::size_t nbVar() const{return domains.size();}
     std::size_t sizeDomain(int var) const{return domains.at(var).size();}
+    unsigned int nbConstraints() const {return nConstraints;}
 
     void addVariable(int var);
     void addVariableValue(int var, int value);
@@ -60,7 +66,9 @@ public:
     // Check if the added variable do not produce infeasibility with the given value
     // assuming the partial solution without this variable is feasible
     bool feasible(const std::unordered_map<int,int>& partSol, int var, int value) const;
-    
+
+    void readProblemType(std::string path);
+    void init(std::string path);
     void init(ColorProblem problem, int nbColors);
     void init(QueenProblem problem);
     void init(SudokuProblem problem);

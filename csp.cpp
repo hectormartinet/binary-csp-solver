@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cassert>
 #include <typeinfo>
+#include <fstream>
 
 #include "csp.h"
 
@@ -14,6 +15,7 @@ CSP::CSP(const CSP& csp) {
             constraints.at(x).emplace(y,Cxy->clone()); // Copy unique ptrs
         }
     }
+    nConstraints = csp.nbConstraints();
 }
 
 void CSP::addVariable(int var) {
@@ -71,7 +73,7 @@ void CSP::addIntensiveConstraint(int x, int y, const std::function<bool(int,int)
         constraints.emplace(x,std::unordered_map<int,std::unique_ptr<Constraint>>());
     if (constraints.at(x).count(y) == 0)
         constraints.at(x).emplace(y,std::make_unique<IntensiveConstraint>(x,y,validPair));
-    
+
     // add the symmetric constraint
     if (constraints.count(y) == 0)
         constraints.emplace(y,std::unordered_map<int,std::unique_ptr<Constraint>>());
@@ -141,9 +143,44 @@ void CSP::init(QueenProblem problem){
     // Constraints
     for (int x=0; x<n; x++) {
         for (int y=x+1; y<n; y++) {
-            addConstraint(x,y,[&](int a, int b) {return a!=b && std::abs(a-b)!=std::abs(x-y);});
+            // addConstraint(x,y,[&](int a, int b) {return a!=b && std::abs(a-b)!=std::abs(x-y);});
+            addIntensiveConstraint(x,y, [x, y](int a, int b) {return a!=b && std::abs(a-b)!=std::abs(x-y);}, true);
         }
     }
+}
+
+void CSP::readProblemType(std::string path) {
+    std::ifstream inputFile(path);
+    if (!inputFile.is_open()) {
+        std::cerr << "Cannot open file: " << path << std::endl;
+    }
+    std::string type;
+    std::getline(inputFile, type);
+    if (type == "queens") problemType = Problem::Queens;
+    if (type == "sudoku") problemType = Problem::Sudoku;
+    if (type == "color") problemType = Problem::Color;
+    if (type == "generic") problemType = Problem::Generic;
+}
+
+void CSP::init(std::string path) {
+    readProblemType(path);
+    switch (problemType) 
+    {
+    case Problem::Queens: 
+        return init(ProblemReader::readQueenProblem(path));
+    case Problem::Color: 
+        return init(ProblemReader::readColorProblem(path), 2);
+    case Problem::Sudoku: 
+        return init(ProblemReader::readSudokuProblem(path));
+    // case 3: init(ProblemReader::readSudokuProblem(path));
+    default:
+        std::cerr << "Wrong model" << path << std::endl;
+    }
+    std::cout << std::endl;
+    std::cout << "Initial problem: ";
+    // std::cout << problemType << " / ";
+    std::cout << nbVar() << " variables / ";
+    std::cout << nConstraints << " constraints" << std::endl; 
 }
 
 void CSP::init(ColorProblem problem, int nbColors) {
@@ -167,7 +204,6 @@ void CSP::init(ColorProblem problem, int nbColors) {
 
 void CSP::init(SudokuProblem problem) {
     assert(problem.grid.size() == problem.n);
-
     unsigned int n = problem.n;
     int nInt = int(n); // to calm down gcc warnings
     int sqrLen = int(sqrt(n));
@@ -190,7 +226,6 @@ void CSP::init(SudokuProblem problem) {
     }
 
     auto lambdaDifferent = [](int a,int b) {return a != b;};
-
     // Constraints
     for (int i=0; i<nInt; i++) {
         for (int j=0; j<nInt; j++) {

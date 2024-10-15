@@ -8,16 +8,10 @@
 ColorProblem ProblemReader::readColorProblem(std::string path) {
     std::ifstream inputFile(path);
     ColorProblem problem;
-    
-    if (!inputFile.is_open()) {
-        std::cerr << "Cannot open file: " << path << std::endl;
-        return problem;
-    }
-
 
     std::string line;
     std::string word;
-
+    std::getline(inputFile, line);
     while (std::getline(inputFile, line)) {
         std::stringstream ss(line);
         ss >> word;
@@ -44,12 +38,8 @@ SudokuProblem ProblemReader::readSudokuProblem(std::string path) {
     SudokuProblem problem;
     problem.n = n;
     
-    if (!inputFile.is_open()) {
-        std::cerr << "Cannot open file: " << path << std::endl;
-        return problem;
-    }
-
     std::string line;
+    std::getline(inputFile, line);
     std::getline(inputFile, line);
     for (unsigned int i=0; i<n; i++) {
         problem.grid.push_back(std::vector<int>());
@@ -57,5 +47,16 @@ SudokuProblem ProblemReader::readSudokuProblem(std::string path) {
             problem.grid.back().push_back(line[n*i+j]-'0');
         }
     }
+    return problem;
+}
+
+QueenProblem ProblemReader::readQueenProblem(std::string path) {
+    std::ifstream inputFile(path);
+    QueenProblem problem;
+
+    std::string line;
+    std::getline(inputFile, line);
+    std::getline(inputFile, line);
+    problem.nb_queens = stoi(line);
     return problem;
 }

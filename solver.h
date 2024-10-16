@@ -60,6 +60,7 @@ public:
     void displayModelInformation() const;
     void displaySolveInformation() const;
     void displayFinalInformation() const;
+    void displayLogo() const;
 
 };
 

@@ -11,6 +11,11 @@ struct QueenProblem {
     int nb_queens;
 };
 
+struct BlockedQueenProblem {
+    int nb_queens;
+    std::vector<std::pair<int,int>> blockedSquares;
+};
+
 struct SudokuProblem {
     unsigned int n;
     std::vector<std::vector<int>> grid;

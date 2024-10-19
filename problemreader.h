@@ -12,6 +12,7 @@ public:
     static SudokuProblem readSudokuProblem(std::string path);
     static QueenProblem readQueenProblem(std::string path);
     static BlockedQueenProblem readBlockedQueenProblem(std::string path);
+    static NonogramProblem readNonogramProblem(std::string path);
     // static Problem readGenericProblem(std::string path);
 };
 

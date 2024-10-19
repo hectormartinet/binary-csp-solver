@@ -29,6 +29,12 @@ void CSP::addVariableValue(int var, int value) {
     domains.at(var).emplace(value);
 }
 
+void CSP::addVariableRange(int var, int start, int end) {
+    for (int value=start; value<end; value++) {
+        addVariableValue(var,value);
+    }
+}
+
 bool CSP::removeVariableValue(int var, int value) {
     return domains.at(var).erase(value);
 }
@@ -139,9 +145,7 @@ void CSP::init(const QueenProblem& problem){
     // Domains
     for (int var=0; var<n; var++) {
         addVariable(var);
-        for (int value=0; value<n; value++) {
-            addVariableValue(var,value);
-        }
+        addVariableRange(var,0,n);
     }
 
     // Constraints
@@ -159,9 +163,7 @@ void CSP::init(const BlockedQueenProblem& problem){
     // Domains
     for (int var=0; var<n; var++) {
         addVariable(var);
-        for (int value=0; value<n; value++) {
-            addVariableValue(var,value);
-        }
+        addVariableRange(var, 0, n);
     }
 
     for (auto [var,value] : problem.blockedSquares) {
@@ -187,6 +189,7 @@ void CSP::readProblemType(std::string path) {
     if (type == "blocked_queens") problemType = Problem::Queens;
     if (type == "sudoku") problemType = Problem::Sudoku;
     if (type == "color") problemType = Problem::Color;
+    if (type == "nonogram") problemType = Problem::Nonogram; 
     if (type == "generic") problemType = Problem::Generic;
 }
 
@@ -198,6 +201,7 @@ void CSP::init(std::string path) {
     case Problem::BlockedQueens: return init(ProblemReader::readQueenProblem(path));
     case Problem::Color: return init(ProblemReader::readColorProblem(path));
     case Problem::Sudoku: return init(ProblemReader::readSudokuProblem(path));
+    case Problem::Nonogram: return init(ProblemReader::readNonogramProblem(path));
     // case 3: init(ProblemReader::readSudokuProblem(path));
     default: std::cerr << "Wrong model" << path << std::endl;
     }
@@ -206,10 +210,10 @@ void CSP::init(std::string path) {
 void CSP::init(const ColorProblem& problem) {
     int nbColors = problem.nb_nodes;
     nbColors = std::min(nbColors,int(0.5*(std::sqrt(4*problem.nb_edges+1))));
-    std::vector<int> degrees(problem.nb_nodes,0);
+    std::vector<int> degrees((unsigned int)(problem.nb_nodes),0);
     for (std::pair<int,int> edge : problem.edges) {
-        degrees[edge.first]++;
-        degrees[edge.second]++;
+        degrees[(unsigned int)(edge.first)]++;
+        degrees[(unsigned int)(edge.second)]++;
     }
     int degreeMax = 0;
     for (int d:degrees) {
@@ -220,9 +224,7 @@ void CSP::init(const ColorProblem& problem) {
     // Conventions on files -> starting from 1
     for (int var=1; var<=problem.nb_nodes; var++) {
         addVariable(var);
-        for (int col=0; col<nbColors; col++) {
-            addVariableValue(var,col);
-        }
+        addVariableRange(var, 0, nbColors);
     }
 
     auto lambdaDifferent = [](int a,int b) {return a != b;};
@@ -250,9 +252,7 @@ void CSP::init(const SudokuProblem& problem) {
                 addVariableValue(varIdx,problem.grid[i][j]);
                 continue;
             }
-            for (int val=1; val<=(int)n; val++) {
-                addVariableValue(varIdx,val);
-            }
+            addVariableRange(varIdx, 0, int(n));
         }
     }
 
@@ -283,6 +283,37 @@ void CSP::init(const SudokuProblem& problem) {
                     addConstraint(varIdx,var2Idx,lambdaDifferent);
                 }
             }
+        }
+    }
+}
+
+void CSP::init(const NonogramProblem& problem) {
+    std::vector<std::vector<std::vector<bool>>> allVerticalPossibilities;
+    std::vector<std::vector<std::vector<bool>>> allHorizontalPossibilities;
+
+    int w = int(problem.w);
+    int h = int(problem.h);
+
+    // Domains
+    for (int i=0; i<w; i++) {
+        allVerticalPossibilities.push_back(problem.getAllPossible(problem.verticalClues[(unsigned int)(i)], problem.h));
+        addVariable(i);
+        addVariableRange(i, 0, int(allVerticalPossibilities.back().size()));
+    }
+    for (int j=0; j<h; j++) {
+        allHorizontalPossibilities.push_back(problem.getAllPossible(problem.horizontalClues[(unsigned int)(j)], problem.w));
+        addVariable(w + j);
+        addVariableRange(w + j, 0, int(allHorizontalPossibilities.back().size()));
+    }
+
+    // Constraints
+    for (int i=0; i<w; i++) {
+        for (int j=0; j<h; j++) {
+            addConstraint(i, w + j, [&](int a, int b) { 
+                return
+                    allVerticalPossibilities[(unsigned int)(i)][(unsigned int)(a)][(unsigned int)(j)] 
+                    == allHorizontalPossibilities[(unsigned int)(j)][(unsigned int)(b)][(unsigned int)(i)];
+            });
         }
     }
 }

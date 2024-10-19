@@ -80,3 +80,40 @@ BlockedQueenProblem ProblemReader::readBlockedQueenProblem(std::string path) {
     }
     return problem;
 }
+
+NonogramProblem ProblemReader::readNonogramProblem(std::string path) {
+    std::ifstream inputFile(path);
+    NonogramProblem problem;
+
+    std::string line;
+    std::string word;
+    std::stringstream ss;
+    std::getline(inputFile, line);
+    std::getline(inputFile, line);
+    ss = std::stringstream(line);
+    ss >> word;
+    problem.w = std::stoul(word);
+    ss >> word;
+    problem.h = std::stoul(word);
+
+    for (unsigned int i=0; i<problem.w; i++) {
+        std::getline(inputFile, line);
+        ss = std::stringstream(line);
+        problem.verticalClues.push_back(std::vector<unsigned int>());
+
+        while (ss >> word) {
+            problem.verticalClues.back().push_back(std::stoul(word));
+        }
+    }
+
+    for (unsigned int j=0; j<problem.h; j++) {
+        std::getline(inputFile, line);
+        ss = std::stringstream(line);
+        problem.horizontalClues.push_back(std::vector<unsigned int>());
+        
+        while (ss >> word) {
+            problem.horizontalClues.back().push_back(std::stoul(word));
+        }
+    }
+    return problem;
+}

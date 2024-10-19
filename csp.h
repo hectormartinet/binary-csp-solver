@@ -9,7 +9,7 @@
 #include <thread>
 #include "constraint.h"
 #include "problemreader.h"
-enum class Problem {Queens, BlockedQueens, Color, Sudoku, Generic};
+enum class Problem {Queens, BlockedQueens, Color, Sudoku, Nonogram, Generic};
 class CSP {
 
 private:
@@ -43,6 +43,7 @@ public:
 
     void addVariable(int var);
     void addVariableValue(int var, int value);
+    void addVariableRange(int var, int start, int end);
     bool removeVariableValue(int var, int value);
     void fixValue(int var, int value);
     bool isInDomain(int var, int value);
@@ -73,6 +74,7 @@ public:
     void init(const QueenProblem& problem);
     void init(const BlockedQueenProblem& problem);
     void init(const SudokuProblem& problem);
+    void init(const NonogramProblem& problem);
 
     void cleanConstraints();
     

@@ -86,6 +86,8 @@ public:
     void displaySolveInformation() const;
     void displayFinalInformation() const;
     void displaySolution() const;
+    void displayLogo() const;
+
 };
 
 #endif

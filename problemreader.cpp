@@ -60,3 +60,23 @@ QueenProblem ProblemReader::readQueenProblem(std::string path) {
     problem.nb_queens = stoi(line);
     return problem;
 }
+
+BlockedQueenProblem ProblemReader::readBlockedQueenProblem(std::string path) {
+    std::ifstream inputFile(path);
+    BlockedQueenProblem problem;
+
+    std::string line;
+    std::getline(inputFile, line);
+    std::getline(inputFile, line);
+    problem.nb_queens = stoi(line);
+    std::string word;
+    while (std::getline(inputFile, line)) {
+        std::stringstream ss(line);
+        ss >> word;
+        int i = std::stoi(word);
+        ss >> word;
+        int j = std::stoi(word);
+        problem.blockedSquares.push_back(std::make_pair(i,j));
+    }
+    return problem;
+}

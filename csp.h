@@ -9,7 +9,7 @@
 #include <thread>
 #include "constraint.h"
 #include "problemreader.h"
-enum class Problem {Queens, Color, Sudoku, Generic};
+enum class Problem {Queens, BlockedQueens, Color, Sudoku, Generic};
 class CSP {
 
 private:
@@ -59,6 +59,7 @@ public:
     void init(std::string path);
     void init(const ColorProblem& problem);
     void init(const QueenProblem& problem);
+    void init(const BlockedQueenProblem& problem);
     void init(const SudokuProblem& problem);
     
     void display(bool removeSymmetry = true) const;

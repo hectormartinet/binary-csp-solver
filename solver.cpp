@@ -229,7 +229,17 @@ void Solver::unbranchOnVar(int var, std::vector<int> values) {
     }
 }
 
+void Solver::displayLogo() const{
+    std::cout << R"(
+  ___                    _ ___      _ 
+ | _ ) __ _ _ _  __ __ _| / __| ___| |_ _____ _ _         ___ 
+ | _ \/ _` | ' \/ _/ _` | \__ \/ _ \ \ V / -_) '_|       /   \
+ |___/\__,_|_||_\__\__,_|_|___/\___/_|\_/\___|_|>=-=-=-='\___/
+)" << std::endl;
+}
+
 void Solver::solve() {
+    displayLogo();
     displayModelInformation();
 
     if (!presolve()) {

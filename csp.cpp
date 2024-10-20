@@ -152,6 +152,29 @@ void CSP::init(const QueenProblem& problem){
     }
 }
 
+void CSP::init(const BlockedQueenProblem& problem){
+    int n = problem.nb_queens;
+
+    // Domains
+    for (int var=0; var<n; var++) {
+        addVariable(var);
+        for (int value=0; value<n; value++) {
+            addVariableValue(var,value);
+        }
+    }
+
+    for (auto [var,value] : problem.blockedSquares) {
+        removeVariableValue(var,value);
+    }
+
+    // Constraints
+    for (int x=0; x<n; x++) {
+        for (int y=x+1; y<n; y++) {
+            addIntensiveConstraint(x,y,[x,y](int a, int b) {return a!=b && std::abs(a-b)!=std::abs(x-y);}, true);
+        }
+    }
+}
+
 void CSP::readProblemType(std::string path) {
     std::ifstream inputFile(path);
     if (!inputFile.is_open()) {
@@ -160,6 +183,7 @@ void CSP::readProblemType(std::string path) {
     std::string type;
     std::getline(inputFile, type);
     if (type == "queens") problemType = Problem::Queens;
+    if (type == "blocked_queens") problemType = Problem::Queens;
     if (type == "sudoku") problemType = Problem::Sudoku;
     if (type == "color") problemType = Problem::Color;
     if (type == "generic") problemType = Problem::Generic;
@@ -170,6 +194,7 @@ void CSP::init(std::string path) {
     switch (problemType) 
     {
     case Problem::Queens: return init(ProblemReader::readQueenProblem(path));
+    case Problem::BlockedQueens: return init(ProblemReader::readQueenProblem(path));
     case Problem::Color: return init(ProblemReader::readColorProblem(path));
     case Problem::Sudoku: return init(ProblemReader::readSudokuProblem(path));
     // case 3: init(ProblemReader::readSudokuProblem(path));

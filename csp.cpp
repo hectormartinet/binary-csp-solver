@@ -38,7 +38,6 @@ bool CSP::isInDomain(int var, int value) {
 }
 
 void CSP::fixValue(int var, int value) {
-    // assert(isInDomain(var, value));
     domains.at(var) = std::unordered_set<int> {value};
 }
 
@@ -181,7 +180,7 @@ void CSP::init(std::string path) {
 void CSP::init(const ColorProblem& problem) {
     int nbColors = problem.nb_nodes;
     nbColors = std::min(nbColors,int(0.5*(std::sqrt(4*problem.nb_edges+1))));
-    std::vector<int> degrees(problem.nb_nodes,0);
+    std::vector<int> degrees((std::size_t) problem.nb_nodes,0);
     for (std::pair<int,int> edge : problem.edges) {
         degrees[edge.first]++;
         degrees[edge.second]++;
@@ -260,67 +259,6 @@ void CSP::init(const SudokuProblem& problem) {
             }
         }
     }
-}
-
-void CSP::cleanConstraints(){
-    for (const auto& [x,Cx] : constraints) {
-        for (const auto& [y,Cxy] : Cx) {
-            for (auto [a,b] : Cxy->getUselessPairs(getDomain(x))) {
-                removeConstraintValuePair(x,y,a,b);
-            }
-        }
-    }
-}
-
-void CSP::initAC4() {
-    cleanConstraints();
-    for (const auto& [x,Cx] : constraints) {
-        for (const auto& [y,Cxy] : Cx) {
-            for (int a : getDomain(x)) {
-                if (Cxy->getSupportSize(a)==0) {
-                    addAC4List(x, a);
-                }
-            }
-        }
-    }
-    for (auto [x,a]:AC4List) {   
-        removeVariableValue(x,a);
-    }
-}
-
-void CSP::AC4() {
-    while(!AC4List.empty()) {
-        auto [y,b] = *AC4List.begin();
-        removeAC4List(y,b);
-        std::vector<std::pair<int,int>> toPropagate;
-        for (const auto& [x, Cyx]:constraints.at(y)) {
-            if (Cyx->getSupportSize(b)==0) continue;
-            for (int a:Cyx->getSupport(b)) {
-                toPropagate.push_back(std::make_pair(x,a));
-            }
-        }
-        for (auto [x,a] : toPropagate) {
-            removeConstraintValuePair(x,y,a,b);
-            // Lazy evaluation
-            if (constraints.at(x).at(y)->getSupportSize(a) == 0 && removeVariableValue(x,a)) {
-                addAC4List(x,a);
-            }
-        }
-    }
-}
-
-bool CSP::checkAC() {
-    cleanConstraints();
-    for (const auto& [x,Cx] : constraints) {
-        for (const auto& [y,Cxy] : Cx) {
-            for (int a : getDomain(x)) {
-                if (Cxy->getSupportSize(a)==0) {
-                    return false;
-                }
-            }
-        }
-    }
-    return true;
 }
 
 void CSP::display(bool removeSymmetry) const {

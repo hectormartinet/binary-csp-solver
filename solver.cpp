@@ -1,21 +1,27 @@
 #include "solver.h"
 #include <iostream>
 
-Solver::Solver(CSP _problem, bool _verbosity) : problem(_problem), verbosity(_verbosity) {
+Solver::Solver(CSP _problem, SolveMethod _solveMethod, bool _verbosity) : problem(_problem), solveMethod(_solveMethod), verbosity(_verbosity) {
     unsetVariables = problem.getVariables();
     varChooser = std::make_unique<SmallestDomainVariableChooser>();
     valueChooser = std::make_unique<CopyValueChooser>();
 }
 
-bool Solver::removeVariableValue(int x, int a) {
-    if (state == State::Solve) deltaDomains.back().push_back(std::make_pair(x, a));
+void Solver::removeConstraintValuePair(int x, int y, int a, int b) {
+    if (state == State::Solve) deltaConstrValPair.back().push_back(std::make_tuple(x,y,a,b));
+    problem.removeConstraintValuePair(x, y, a, b);
+}
+
+bool Solver::removeVarValue(int x, int a) {
+    if (state == State::Solve) deltaDomains.back().push_back(std::make_pair(x,a));
     problem.removeVariableValue(x, a);
     switch (problem.getDomainSize(x)) 
     {
     case 1:
     {
-        int c = *problem.getDomain(x).begin();
-        lazyPropagateList.push_back(std::make_pair(x,c));
+        int onlyValue = *problem.getDomain(x).begin();
+        if (solveMethod == SolveMethod::LazyPropagate) 
+            lazyPropagateList.emplace(std::make_pair(x,onlyValue));
         break;
     }
     case 0: 
@@ -27,59 +33,153 @@ bool Solver::removeVariableValue(int x, int a) {
 }
 
 bool Solver::forwardChecking(int x, int a) {
+    assert(solveMethod == SolveMethod::LazyPropagate || solveMethod == SolveMethod::ForwardChecking);
     for (const auto& [y, Cxy] : problem.getConstraints().at(x)) {
         if (unsetVariables.count(y)) {
             std::vector<int> domain;
             domain.insert(domain.end(), problem.getDomain(y).begin(), problem.getDomain(y).end());
             for (int b : domain) {
-                if (!Cxy->feasible(a,b) && !removeVariableValue(y, b)) return false;
+                if (!Cxy->feasible(a,b) && !removeVarValue(y, b)) return false;
             }
         }
     }
     return true;
 }
 
-bool Solver::lazyPropagate(int z, int d) {
-    lazyPropagateList.push_back(std::make_pair(z,d));
-    while (lazyPropagateList.size() > 0) {
-        auto [x, a] = lazyPropagateList.back();
-        fixVarValue(x,a);
-        lazyPropagateList.pop_back();
-        bool feasible = forwardChecking(x, a);
-        if (!feasible) {
-            lazyPropagateList.clear();
-            return false;
+void Solver::removeLazyPropagateList(int x, int a) {
+    lazyPropagateList.erase(std::make_pair(x,a));
+    setVar(x,a);
+}
+
+bool Solver::lazyPropagate(int var, int value) {
+    assert(solveMethod == SolveMethod::LazyPropagate);
+    lazyPropagateList.emplace(std::make_pair(var,value));
+    while (!lazyPropagateList.empty()) {
+        auto [x,a] = *lazyPropagateList.begin();
+        removeLazyPropagateList(x,a);
+        if (!forwardChecking(x,a)) return false;
+    }
+    return true;
+}
+
+void Solver::cleanConstraints(){
+    for (const auto& [x,Cx] : problem.getConstraints()) {
+        for (const auto& [y,Cxy] : Cx) {
+            for (auto [a,b] : Cxy->getUselessPairs(problem.getDomain(x))) {
+                removeConstraintValuePair(x,y,a,b);
+            }
+        }
+    }
+}
+
+bool Solver::initAC4Root() {
+    assert(solveMethod == SolveMethod::AC4);
+    assert(state == State::Preprocess);
+    cleanConstraints();
+    for (const auto& [x,Cx] : problem.getConstraints()) {
+        for (const auto& [y,Cxy] : Cx) {
+            for (int a : problem.getDomain(x)) {
+                if (Cxy->getSupportSize(a)==0) {
+                    addAC4List(x, a);
+                }
+            }
+        }
+    }
+    for (auto [x,a] : AC4List) {   
+        if (!removeVarValue(x,a)) return false;
+    }
+    return true;
+}
+
+bool Solver::initAC4Solve(int var, int value, std::vector<int> oldDomain) {
+    assert(state == State::Solve);
+    for (int d : oldDomain) {
+        if (d != value) addAC4List(var, d);
+    }
+    return true;
+}
+
+void Solver::removeAC4List(int x, int a) {
+    AC4List.erase(std::make_pair(x,a));
+    int onlyVal = *problem.getDomain(x).begin();
+    if (problem.getDomainSize(x) == 1) setVar(x,onlyVal);
+}
+
+bool Solver::AC4() {
+    assert(solveMethod == SolveMethod::AC4);
+    while(!AC4List.empty()) {
+        auto [y,b] = *AC4List.begin();
+        removeAC4List(y,b);
+        std::vector<std::pair<int,int>> toPropagate;
+        for (const auto& [x, Cyx]:problem.getConstraints().at(y)) {
+            if (Cyx->getSupportSize(b)==0) continue;
+            for (int a:Cyx->getSupport(b)) {
+                toPropagate.push_back(std::make_pair(x,a));
+            }
+        }
+        for (auto [x,a] : toPropagate) {
+            removeConstraintValuePair(x,y,a,b);
+            // Lazy evaluation
+            if (problem.getConstraints().at(x).at(y)->getSupportSize(a) == 0 && problem.getDomain(x).count(a)) {
+                if (removeVarValue(x,a)) addAC4List(x,a);
+                else return false;
+            }
         }
     }
     return true;
 }
 
-void Solver::fixVarValue(int var, int value) {
-    if (!unsetVariables.erase(var)) return;
-    if (state == State::Solve) deltaFixedVars.back().push_back(var);
-    setVariables.emplace(var,value);
-    problem.fixValue(var, value);
-    lazyPropagateList.push_back(std::make_pair(var, value));
+bool Solver::checkAC() {
+    cleanConstraints();
+    for (const auto& [x,Cx] : problem.getConstraints()) {
+        for (const auto& [y,Cxy] : Cx) {
+            for (int a : problem.getDomain(x)) {
+                if (Cxy->getSupportSize(a)==0) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
 }
 
-void Solver::unfixVarValue(int var) {
+void Solver::setVar(int var, int value) {
+    if (!unsetVariables.erase(var)) return;
+    if (state == State::Solve) deltaSetVars.back().push_back(var);
+    setVariables.emplace(var,value);
+    problem.fixValue(var, value);
+}
+
+void Solver::unsetVar(int var) {
     setVariables.erase(var);
     unsetVariables.emplace(var);
 }
 
 void Solver::flashback() {
+    AC4List.clear();
+    lazyPropagateList.clear();
     for (auto [y,b] : deltaDomains.back()) {
         problem.addVariableValue(y, b);
     }
     deltaDomains.pop_back();
 
-    for (int var : deltaFixedVars.back()) {
-        unfixVarValue(var);
+    for (auto[x, y, a, b] : deltaConstrValPair.back()) {
+        problem.addConstraintValuePair(x, y, a, b);
     }
-    deltaFixedVars.pop_back();
+    deltaConstrValPair.pop_back();
+
+    for (int y : deltaSetVars.back()) {
+        unsetVar(y);
+    }
+    deltaSetVars.pop_back();
 }
 
 bool Solver::presolve() {
+    if (solveMethod == SolveMethod::AC4) {
+        bool consistent = initAC4Root() && AC4();
+        if(!consistent) return false;
+        assert(checkAC());
+    }
     for (int var: problem.getVariables()) {
         switch (problem.getDomainSize(var))
         {
@@ -87,10 +187,24 @@ bool Solver::presolve() {
             return false;
         case 1:
         {
-            int value =*problem.getDomain(var).begin(); // not pretty
-            if (!feasible(var,value)) return false;
-            lazyPropagate(var, value);
-            break;
+            int value = *problem.getDomain(var).begin();
+            setVar(var, value);
+            // if (!feasible(var,value)) return false;
+            switch (solveMethod) 
+            {
+            case SolveMethod::ForwardChecking:
+            {
+                if (!forwardChecking(var, value)) return false;
+                break;
+            }
+            case SolveMethod::LazyPropagate:
+            {
+                if (!lazyPropagate(var, value)) return false;
+                break;
+            }
+            default:
+                break;
+            }
         }
         default:
             break;
@@ -103,15 +217,82 @@ bool Solver::presolve() {
 
 void Solver::branchOnVar(int var, int value) {
     nbNodesExplored++;
-    deltaFixedVars.push_back({});
+    deltaSetVars.push_back({});
     deltaDomains.push_back({});
-    fixVarValue(var, value);
+    deltaConstrValPair.push_back({});
+    setVar(var, value);
 }
 
-void Solver::unbranchVar(int var, std::vector<int> values) {
+void Solver::unbranchOnVar(int var, std::vector<int> values) {
     for (int value : values) {
         problem.addVariableValue(var, value);
     }
+}
+
+void Solver::solve() {
+    displayModelInformation();
+
+    if (!presolve()) {
+        std::cout << "inconsistent" << std::endl;
+        return;
+    }
+
+    state = State::Solve;
+    displaySolveInformation();
+    
+    std::vector<std::thread> threads;
+    threads.emplace_back(std::thread(&Solver::launchSolve, this));
+    if (verbosity) threads.emplace_back(std::thread(&Solver::solve_verbosity, this));
+    for (auto& t : threads) t.join();
+
+    displayFinalInformation();
+}
+
+void Solver::launchSolve() {
+    solve_time = clock();
+    foundSolution = recursiveSolve();
+    solve_time = clock() - solve_time;
+    state = State::Stop;
+}
+
+bool Solver::checkConsistent(int var, int value) {
+    switch (solveMethod) 
+    {
+    case SolveMethod::AC4: 
+       return AC4();
+    case SolveMethod::ForwardChecking: 
+        return forwardChecking(var, value);
+    case SolveMethod::LazyPropagate: 
+        return lazyPropagate(var, value);
+    default:
+        break;
+    }
+    return false;
+
+}
+
+bool Solver::recursiveSolve() {
+    if (unsetVariables.empty()) return true;
+    int currentDepth = (int) setVariables.size() + 1;
+    if (currentDepth > bestDepth) bestDepth = currentDepth;
+    int var = chooseVar();
+    std::vector<int> values = chooseValue(var);
+
+    for (int value : values) {
+        branchOnVar(var, value);
+        if (solveMethod == SolveMethod::AC4) initAC4Solve(var, value, values);
+        if (!checkConsistent(var, value)) {
+            flashback();
+            continue;
+        }
+        if (solveMethod == SolveMethod::AC4) assert(checkAC());
+        
+        if (recursiveSolve()) return true;
+        flashback();
+    }
+    unbranchOnVar(var, values);
+
+    return false;
 }
 
 void Solver::solve_verbosity() {
@@ -145,53 +326,6 @@ void Solver::displayFinalInformation() const{
     std::cout << a << std::endl;
 
     std::cout << "Solve time: " << (float)solve_time/CLOCKS_PER_SEC << std::endl;
-}
-
-void Solver::solve() {
-    displayModelInformation();
-
-    presolve();
-    // problem.cleanConstraints();
-    // problem.initAC4();
-    // problem.AC4();
-
-    state = State::Solve;
-    displaySolveInformation();
-    
-    std::vector<std::thread> threads;
-    threads.emplace_back(std::thread(&Solver::launchSolve, this));
-    if (verbosity) threads.emplace_back(std::thread(&Solver::solve_verbosity, this));
-    for (auto& t : threads) t.join();
-
-    displayFinalInformation();
-}
-
-void Solver::launchSolve() {
-    solve_time = clock();
-    foundSolution = recursiveSolve();
-    solve_time = clock() - solve_time;
-    state = State::Stop;
-}
-
-bool Solver::recursiveSolve() {
-    if (unsetVariables.empty()) return true;
-    std::size_t currentDepth = setVariables.size() + 1;
-    if (currentDepth > bestDepth) bestDepth = currentDepth;
-    int var = chooseVar();
-    std::vector<int> values = chooseValue(var);
-    for (int value : values) {
-        branchOnVar(var, value);
-        bool feasibility = lazyPropagate(var, value);
-        if (!feasibility) {
-            flashback();
-            continue;
-        }
-        if (recursiveSolve()) return true;
-        flashback();
-    }
-    unbranchVar(var, values);
-
-    return false;
 }
 
 void Solver::displaySolution() const{

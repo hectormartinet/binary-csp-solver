@@ -309,11 +309,15 @@ void CSP::init(const NonogramProblem& problem) {
     // Constraints
     for (int i=0; i<w; i++) {
         for (int j=0; j<h; j++) {
-            addConstraint(i, w + j, [&](int a, int b) { 
-                return
-                    allVerticalPossibilities[(unsigned int)(i)][(unsigned int)(a)][(unsigned int)(j)] 
-                    == allHorizontalPossibilities[(unsigned int)(j)][(unsigned int)(b)][(unsigned int)(i)];
-            });
+            std::vector<bool> iValues(getDomainSize(i));
+            for (int a : getDomain(i)) {
+                iValues[(unsigned int)(a)] = allVerticalPossibilities[(unsigned int)(i)][(unsigned int)(a)][(unsigned int)(j)];
+            }
+            std::vector<bool> jValues(getDomainSize(w+j));
+            for (int b : getDomain(w+j)) {
+                jValues[(unsigned int)(b)] = allHorizontalPossibilities[(unsigned int)(j)][(unsigned int)(b)][(unsigned int)(i)];
+            }
+            addIntensiveConstraint(i, w + j, [iValues,jValues](int a, int b) {return iValues[(unsigned int)(a)] == jValues[(unsigned int)(b)];});
         }
     }
 }

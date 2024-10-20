@@ -1,6 +1,19 @@
-CC=g++
-CFLAGS=-I.
+CXX=g++
+CXXFLAGS=-I.
+CFLAGS_D=-g
+CFLAGS_R=-O3
 
-run: main.cpp solver.cpp constraint.cpp problemreader.cpp csp.cpp
-	$(CC) -o run main.cpp solver.cpp constraint.cpp problemreader.cpp csp.cpp $(CFLAGS)
- 
+CONF := debug
+NAME = run
+
+ifeq ($(CONF),debug)
+    CXXFLAGS += -g -Wall -Wextra -Wpedantic
+endif
+ifeq ($(CONF),release)
+	CXXFLAGS += -O3
+endif
+
+SRC = main.cpp solver.cpp constraint.cpp problemreader.cpp csp.cpp
+
+run: $(SRC)
+	$(CXX) $(CXXFLAGS) -o run $(SRC)

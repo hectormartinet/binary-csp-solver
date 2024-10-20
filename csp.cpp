@@ -197,7 +197,6 @@ void CSP::init(std::string path) {
     case Problem::BlockedQueens: return init(ProblemReader::readQueenProblem(path));
     case Problem::Color: return init(ProblemReader::readColorProblem(path));
     case Problem::Sudoku: return init(ProblemReader::readSudokuProblem(path));
-    // case 3: init(ProblemReader::readSudokuProblem(path));
     default: std::cerr << "Wrong model" << path << std::endl;
     }
 }

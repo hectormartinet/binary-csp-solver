@@ -1,10 +1,33 @@
 #include "solver.h"
 #include <iostream>
 
-Solver::Solver(CSP _problem, SolveMethod _solveMethod, bool _verbosity) : problem(_problem), solveMethod(_solveMethod), verbosity(_verbosity) {
+Solver::Solver(CSP _problem, const std::vector<std::string> _parameters, bool _verbosity) : problem(_problem), parameters(_parameters), verbosity(_verbosity) {
     unsetVariables = problem.getVariables();
-    varChooser = std::make_unique<SmallestDomainVariableChooser>();
-    valueChooser = std::make_unique<CopyValueChooser>();
+    translateParameters(parameters);
+}
+
+void Solver::translateParameters(const std::vector<std::string> parameters){
+    assert(parameters.size() == 3);
+    std::string _solveMethod = parameters[0];
+    if (_solveMethod == "AC4") solveMethod = SolveMethod::AC4;
+    else if (_solveMethod == "FC") solveMethod = SolveMethod::ForwardChecking;
+    else if (_solveMethod == "LP") solveMethod = SolveMethod::LazyPropagate;
+    else throw std::logic_error("Wrong solve method");
+
+    std::string _variableChooser = parameters[1];
+    if (_variableChooser == "svarc") varChooser = std::make_unique<SmallestDomainVariableChooser>();
+    else if (_variableChooser == "rvarc") varChooser = std::make_unique<RandomVariableChooser>();
+    else throw std::logic_error("Wrong variable chooser");
+
+    std::string _valueChooser = parameters[2];
+    if (_valueChooser == "cvalc") valueChooser = std::make_unique<CopyValueChooser>();
+    else if (_valueChooser == "svalc") valueChooser = std::make_unique<SmallestValueChooser>();
+    else if (_valueChooser == "rvalc") valueChooser = std::make_unique<RandomValueChooser>();
+    else throw std::logic_error("Wrong value chooser");
+}
+
+void Solver::checkFeasibility(CSP _problem) {
+    if (foundSolution) assert(_problem.feasible(setVariables));
 }
 
 void Solver::removeConstraintValuePair(int x, int y, int a, int b) {
@@ -229,15 +252,6 @@ void Solver::unbranchOnVar(int var, std::vector<int> values) {
     }
 }
 
-void Solver::displayLogo() const{
-    std::cout << R"(
-  ___                    _ ___      _ 
- | _ ) __ _ _ _  __ __ _| / __| ___| |_ _____ _ _         ___ 
- | _ \/ _` | ' \/ _/ _` | \__ \/ _ \ \ V / -_) '_|       /   \
- |___/\__,_|_||_\__\__,_|_|___/\___/_|\_/\___|_|>=-=-=-='\___/
-)" << std::endl;
-}
-
 void Solver::solve() {
     displayLogo();
     displayModelInformation();
@@ -246,7 +260,11 @@ void Solver::solve() {
         std::cout << "inconsistent" << std::endl;
         return;
     }
-
+    if (unsetVariables.empty()) {
+        foundSolution = true;
+        displayFinalInformation();
+        return;
+    }
     state = State::Solve;
     displaySolveInformation();
     
@@ -310,10 +328,10 @@ void Solver::solve_verbosity() {
     std::cout << "--------------------------" << std::endl;
     std::cout << "0" << std::endl;
     while (state == State::Solve) {
-        std::cout << nbNodesExplored << " " << bestDepth << std::endl;
+        std::cout << nbNodesExplored << "    " << bestDepth << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     }
-    std::cout << nbNodesExplored << " " << bestDepth << std::endl;
+    std::cout << nbNodesExplored << "    " << bestDepth << std::endl;
     std::cout << "--------------------------" << std::endl;
 }
 
@@ -326,7 +344,10 @@ void Solver::displayModelInformation() const{
 
 void Solver::displaySolveInformation() const{
     std::cout << "Launch solve with ";
-    std::cout << "verbosity=" << std::to_string(verbosity);
+    std::cout << "solveMethod=" << parameters[0];
+    std::cout << "; varChooser=" << parameters[1];
+    std::cout << "; valChooser=" << parameters[2];
+    std::cout << "; verbosity=" << std::to_string(verbosity);
     std::cout << ":"  << std::endl;
 }
 
@@ -334,8 +355,8 @@ void Solver::displayFinalInformation() const{
     std::string a = (foundSolution) ? std::to_string(nbNodesExplored) + " nodes explored - Found solution" 
                                     : "infeasible";
     std::cout << a << std::endl;
-
-    std::cout << "Solve time: " << (float)solve_time/CLOCKS_PER_SEC << std::endl;
+    if (state == State::Stop)
+        std::cout << "Solve time: " << (float)solve_time/CLOCKS_PER_SEC << std::endl;
 }
 
 void Solver::displaySolution() const{
@@ -343,4 +364,13 @@ void Solver::displaySolution() const{
     for (auto [var,value] : setVariables) {
         std::cout << var << ":" << value << std::endl;
     }
+}
+
+void Solver::displayLogo() const{
+    std::cout << R"(
+  ___                    _ ___      _ 
+ | _ ) __ _ _ _  __ __ _| / __| ___| |_ _____ _ _         ___ 
+ | _ \/ _` | ' \/ _/ _` | \__ \/ _ \ \ V / -_) '_|       /   \
+ |___/\__,_|_||_\__\__,_|_|___/\___/_|\_/\___|_|>=-=-=-='\___/
+)" << std::endl;
 }

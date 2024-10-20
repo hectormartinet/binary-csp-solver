@@ -9,6 +9,7 @@
 #include <thread>
 #include "constraint.h"
 #include "problemreader.h"
+#include <random>
 enum class Problem {Queens, BlockedQueens, Color, Sudoku, Generic};
 class CSP {
 

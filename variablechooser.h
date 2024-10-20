@@ -13,6 +13,7 @@ public:
 class RandomVariableChooser : public VariableChooser {
 protected:
     int choose(const CSP&, const std::unordered_set<int>& variables) const{
+        srand((unsigned int)(time(NULL)));
         int idx = rand()%int(variables.size());
         int i = 0;
         for (int var : variables) {

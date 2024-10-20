@@ -27,6 +27,7 @@ private:
     std::unique_ptr<VariableChooser> varChooser;
     std::unique_ptr<ValueChooser> valueChooser;
     SolveMethod solveMethod;
+    std::vector<std::string> parameters;
     bool verbosity=true;
 
     std::unordered_map<int,int> setVariables;
@@ -45,10 +46,12 @@ private:
     std::unordered_set<std::pair<int,int>,PairHash> lazyPropagateList;
 
 public:
-    Solver(CSP _problem, SolveMethod _solveMethod, bool _verbosity);
+    Solver(CSP _problem, const std::vector<std::string> parameters, bool _verbosity);
+    void translateParameters(const std::vector<std::string> parameters);
 
     bool feasible() const{return problem.feasible(setVariables);}
     bool feasible(int var, int value) const {return problem.feasible(setVariables,var,value);}
+    void checkFeasibility(CSP _problem);
     bool presolve();
     void launchSolve();
     void branchOnVar(int var, int value);

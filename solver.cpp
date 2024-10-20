@@ -15,14 +15,14 @@ void Solver::translateParameters(const std::vector<std::string> parameters){
     else throw std::logic_error("Wrong solve method");
 
     std::string _variableChooser = parameters[1];
-    if (_variableChooser == "svarc") varChooser = std::make_unique<SmallestDomainVariableChooser>();
-    else if (_variableChooser == "rvarc") varChooser = std::make_unique<RandomVariableChooser>();
+    if (_variableChooser == "smallest") varChooser = std::make_unique<SmallestDomainVariableChooser>();
+    else if (_variableChooser == "random") varChooser = std::make_unique<RandomVariableChooser>();
     else throw std::logic_error("Wrong variable chooser");
 
     std::string _valueChooser = parameters[2];
-    if (_valueChooser == "cvalc") valueChooser = std::make_unique<CopyValueChooser>();
-    else if (_valueChooser == "svalc") valueChooser = std::make_unique<SmallestValueChooser>();
-    else if (_valueChooser == "rvalc") valueChooser = std::make_unique<RandomValueChooser>();
+    if (_valueChooser == "copy") valueChooser = std::make_unique<CopyValueChooser>();
+    else if (_valueChooser == "smallest") valueChooser = std::make_unique<SmallestValueChooser>();
+    else if (_valueChooser == "random") valueChooser = std::make_unique<RandomValueChooser>();
     else throw std::logic_error("Wrong value chooser");
 }
 

@@ -9,16 +9,16 @@ int main(int argc, char** argv) {
         std::cout << "Usage: run filePath solveMethod variableChooser valueChooser verbosity" << std::endl;
         exit(1);
     }
-    const char* modelPath = argv[1];
+    const std::string modelPath = argv[1];
     const std::string _solveMethod = argv[2];
     const std::string _variableChooser = argv[3];
     const std::string _valueChooser = argv[4];
-    const char* verbosity = argv[5];
+    const std::string verbosity = argv[5];
 
     const std::vector<std::string> parameters = {_solveMethod, _variableChooser, _valueChooser};
 
     CSP csp(modelPath);
-    Solver solver(csp, parameters, atoi(verbosity));
+    Solver solver(csp, parameters, stoi(verbosity));
 
     solver.solve();
     solver.checkFeasibility(csp);

@@ -9,6 +9,8 @@
 #include <thread>
 #include "constraint.h"
 #include "problemreader.h"
+#include <random>
+
 enum class Problem {Queens, BlockedQueens, Color, Sudoku, Nonogram, Generic};
 class CSP {
 
@@ -17,20 +19,8 @@ private:
     std::unordered_map<int,std::unordered_set<int>> domains;
     std::unordered_map<int,std::unordered_map<int,std::unique_ptr<Constraint>>> constraints;
     Problem problemType;
-    
+
     unsigned int nConstraints=0;
-    
-    struct PairHash {
-    public:
-        size_t hash_combine(size_t seed, int v) const {
-            return seed ^= std::hash<int>{}(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-        }
-        std::size_t operator()(const std::pair<int, int> &pair) const
-        {
-            return hash_combine(std::hash<int>{}(pair.first),pair.second);
-        }
-    };
-    std::unordered_set<std::pair<int,int>,PairHash> AC4List;
 public:
 
     CSP(){};
@@ -74,15 +64,7 @@ public:
     void init(const QueenProblem& problem);
     void init(const BlockedQueenProblem& problem);
     void init(const SudokuProblem& problem);
-    void init(const NonogramProblem& problem);
-
-    void cleanConstraints();
     
-    void addAC4List(int x, int a) {AC4List.emplace(std::make_pair(x, a));}
-    void removeAC4List(int x, int a) {AC4List.erase(std::make_pair(x, a));}
-    void initAC4();
-    void AC4();
-    bool checkAC();
     void display(bool removeSymmetry = true) const;
 };
 

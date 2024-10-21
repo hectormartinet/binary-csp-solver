@@ -64,6 +64,7 @@ public:
     void init(const QueenProblem& problem);
     void init(const BlockedQueenProblem& problem);
     void init(const SudokuProblem& problem);
+    void init(const NonogramProblem& problem);
     
     void display(bool removeSymmetry = true) const;
 };

@@ -46,8 +46,8 @@ private:
     std::unordered_set<std::pair<int,int>,PairHash> lazyPropagateList;
 
 public:
-    Solver(CSP _problem, const std::vector<std::string> parameters, bool _verbosity);
-    void translateParameters(const std::vector<std::string> parameters);
+    Solver(CSP _problem, const std::vector<std::string> _parameters, bool _verbosity);
+    void translateParameters(const std::vector<std::string> _parameters);
 
     bool feasible() const{return problem.feasible(setVariables);}
     bool feasible(int var, int value) const {return problem.feasible(setVariables,var,value);}

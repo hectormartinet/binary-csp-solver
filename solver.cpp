@@ -6,20 +6,20 @@ Solver::Solver(CSP _problem, const std::vector<std::string> _parameters, bool _v
     translateParameters(parameters);
 }
 
-void Solver::translateParameters(const std::vector<std::string> parameters){
-    assert(parameters.size() == 3);
-    std::string _solveMethod = parameters[0];
+void Solver::translateParameters(const std::vector<std::string> _parameters){
+    assert(_parameters.size() == 3);
+    std::string _solveMethod = _parameters[0];
     if (_solveMethod == "AC4") solveMethod = SolveMethod::AC4;
     else if (_solveMethod == "FC") solveMethod = SolveMethod::ForwardChecking;
     else if (_solveMethod == "LP") solveMethod = SolveMethod::LazyPropagate;
     else throw std::logic_error("Wrong solve method");
 
-    std::string _variableChooser = parameters[1];
+    std::string _variableChooser = _parameters[1];
     if (_variableChooser == "smallest") varChooser = std::make_unique<SmallestDomainVariableChooser>();
     else if (_variableChooser == "random") varChooser = std::make_unique<RandomVariableChooser>();
     else throw std::logic_error("Wrong variable chooser");
 
-    std::string _valueChooser = parameters[2];
+    std::string _valueChooser = _parameters[2];
     if (_valueChooser == "copy") valueChooser = std::make_unique<CopyValueChooser>();
     else if (_valueChooser == "smallest") valueChooser = std::make_unique<SmallestValueChooser>();
     else if (_valueChooser == "random") valueChooser = std::make_unique<RandomValueChooser>();

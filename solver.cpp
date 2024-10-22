@@ -197,6 +197,12 @@ void Solver::flashback() {
     deltaSetVars.pop_back();
 }
 
+void Solver::preprocess() {
+    if (solveMethod == SolveMethod::AC4) {
+        problem.extensify();
+    }
+}
+
 bool Solver::presolve() {
     if (solveMethod == SolveMethod::AC4) {
         bool consistent = initAC4Root() && AC4();
@@ -255,6 +261,8 @@ void Solver::unbranchOnVar(int var, std::vector<int> values) {
 void Solver::solve() {
     displayLogo();
     displayModelInformation();
+
+    preprocess();
 
     if (!presolve()) {
         std::cout << "inconsistent" << std::endl;

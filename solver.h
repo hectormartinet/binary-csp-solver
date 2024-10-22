@@ -52,6 +52,7 @@ public:
     bool feasible() const{return problem.feasible(setVariables);}
     bool feasible(int var, int value) const {return problem.feasible(setVariables,var,value);}
     void checkFeasibility(CSP _problem);
+    void preprocess();
     bool presolve();
     void launchSolve();
     void branchOnVar(int var, int value);

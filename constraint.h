@@ -14,12 +14,15 @@ class Constraint {
 public:
     int x;
     int y;
+    bool isExtensive=false;
 
     Constraint(){}
-    Constraint(int _x, int _y): x{_x}, y{_y}{}
+    Constraint(int _x, int _y, bool _isExtensive=false): x{_x}, y{_y}, isExtensive{_isExtensive} {}
     virtual ~Constraint(){}
     
     virtual std::unique_ptr<Constraint> clone()=0;
+    
+    virtual std::unique_ptr<Constraint> extensify(const std::unordered_set<int>& Dx, const std::unordered_set<int>& Dy)=0;
 
     virtual void addPair(int a, int b)=0;
     virtual void removePair(int a, int b)=0;
@@ -42,10 +45,11 @@ protected:
     std::unordered_map<int, std::unordered_set<int>> list;
 
 public:
-    ExtensiveConstraint(int _x, int _y): Constraint(_x,_y) {};
+    ExtensiveConstraint(int _x, int _y): Constraint(_x, _y, true) {};
     ExtensiveConstraint(int _x, int _y, const std::vector<std::pair<int,int>>& pairs);
 
     std::unique_ptr<Constraint> clone() {return std::unique_ptr<ExtensiveConstraint>(new ExtensiveConstraint{*this});}
+    std::unique_ptr<Constraint> extensify(const std::unordered_set<int>&, const std::unordered_set<int>&) {throw std::logic_error("Constraint is already extensive");};
 
     void addPair(int a, int b);
     void removePair(int a, int b);
@@ -68,9 +72,10 @@ protected:
     std::function<bool(int,int)> feasibleFunction;
 
 public:
-    IntensiveConstraint(int _x, int _y, std::function<bool(int,int)> _feasibleFunction) : Constraint(_x,_y), feasibleFunction{_feasibleFunction} {}
+    IntensiveConstraint(int _x, int _y, std::function<bool(int,int)> _feasibleFunction) : Constraint(_x, _y), feasibleFunction{_feasibleFunction} {}
 
     std::unique_ptr<Constraint> clone() {return std::unique_ptr<IntensiveConstraint>(new IntensiveConstraint{*this});}
+    std::unique_ptr<Constraint> extensify(const std::unordered_set<int>& Dx, const std::unordered_set<int>& Dy);
 
     void addPair(int, int) {throw std::logic_error("Cannot add pair to intensive constraint");};
     void removePair(int, int){throw std::logic_error("Cannot remove pair from intensive constraint");};

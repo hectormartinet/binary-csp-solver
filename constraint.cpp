@@ -42,3 +42,13 @@ void ExtensiveConstraint::display() const {
     }
     std::cout << std::endl;
 }
+
+std::unique_ptr<Constraint> IntensiveConstraint::extensify(const std::unordered_set<int>& Dx, const std::unordered_set<int>& Dy) {
+    ExtensiveConstraint* constraint = new ExtensiveConstraint(x,y);
+    for (int a : Dx) {
+        for (int b : Dy) {
+            if (feasible(a,b)) constraint->addPair(a,b);
+        }
+    }
+    return std::unique_ptr<ExtensiveConstraint> (constraint);
+}

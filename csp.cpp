@@ -150,7 +150,6 @@ void CSP::init(const QueenProblem& problem){
     // Constraints
     for (int x=0; x<n; x++) {
         for (int y=x+1; y<n; y++) {
-            // addConstraint(x,y,[&](int a, int b) {return a!=b && std::abs(a-b)!=std::abs(x-y);});
             addIntensiveConstraint(x,y, [x, y](int a, int b) {return a!=b && std::abs(a-b)!=std::abs(x-y);}, true);
         }
     }
@@ -229,7 +228,7 @@ void CSP::init(const ColorProblem& problem) {
 
     //Constraints
     for (std::pair<int,int> edge : problem.edges) {
-        addConstraint(edge,lambdaDifferent);
+        addIntensiveConstraint(edge, lambdaDifferent, true);
     }
 }
 
@@ -263,13 +262,13 @@ void CSP::init(const SudokuProblem& problem) {
             // Line constraint
             for (int i2=i+1; i2<nInt; i2++) {
                 int var2Idx = nInt*i2+j;
-                addConstraint(varIdx,var2Idx,lambdaDifferent);
+                addIntensiveConstraint(varIdx, var2Idx, lambdaDifferent, true);
             }
 
             // Column constraint
             for (int j2=j+1; j2<nInt; j2++) {
                 int var2Idx = nInt*i+j2;
-                addConstraint(varIdx,var2Idx,lambdaDifferent);
+                addIntensiveConstraint(varIdx, var2Idx, lambdaDifferent, true);
             }
 
             // Square constraint
@@ -278,7 +277,7 @@ void CSP::init(const SudokuProblem& problem) {
                 for (int j2=j_start; j2<sqrLen*(j/sqrLen+1); j2++) {
                     if (j2==j) continue;
                     int var2Idx = nInt*i2+j2;
-                    addConstraint(varIdx,var2Idx,lambdaDifferent);
+                    addIntensiveConstraint(varIdx, var2Idx, lambdaDifferent, true);
                 }
             }
         }
@@ -316,6 +315,16 @@ void CSP::init(const NonogramProblem& problem) {
                 jValues[(unsigned int)(b)] = allHorizontalPossibilities[(unsigned int)(j)][(unsigned int)(b)][(unsigned int)(i)];
             }
             addIntensiveConstraint(i, w + j, [iValues,jValues](int a, int b) {return iValues[(unsigned int)(a)] == jValues[(unsigned int)(b)];});
+        }
+    }
+}
+
+void CSP::extensify() {
+    for (auto& [x,Cx] : constraints) {
+        for (auto& [y,Cxy] : Cx) {
+            if (!Cxy->isExtensive) {
+                Cxy = Cxy->extensify(domains.at(x), domains.at(y));
+            }
         }
     }
 }

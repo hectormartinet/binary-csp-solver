@@ -179,7 +179,7 @@ void CSP::init(const BlockedQueenProblem& problem){
 void CSP::readProblemType(std::string path) {
     std::ifstream inputFile(path);
     if (!inputFile.is_open()) {
-        std::cerr << "Cannot open file: " << path << std::endl;
+        throw std::logic_error("Cannot open file - check the path you gave me");
     }
     std::string type;
     std::getline(inputFile, type);
@@ -249,7 +249,7 @@ void CSP::init(const SudokuProblem& problem) {
                 addVariableValue(varIdx,problem.grid[i][j]);
                 continue;
             }
-            addVariableRange(varIdx, 0, int(n));
+            addVariableRange(varIdx, 1, nInt + 1);
         }
     }
 

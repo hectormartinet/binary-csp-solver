@@ -34,9 +34,7 @@ protected:
     std::vector<int> choose(const CSP& problem, int var) const{
         std::vector<int> order;
         order.insert(order.end(), problem.getDomain(var).begin(), problem.getDomain(var).end());
-        std::random_device rd;
-        std::mt19937 g(rd());
-        std::shuffle(order.begin(), order.end(), g);
+        std::random_shuffle ( order.begin(), order.end() );
         return order;
 
     }

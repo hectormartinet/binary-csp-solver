@@ -29,6 +29,8 @@ private:
     SolveMethod solveMethod;
     std::vector<std::string> parameters;
     bool verbosity=true;
+    int timeLimit;
+    unsigned int randomSeed;
 
     std::unordered_map<int,int> setVariables;
     std::unordered_set<int> unsetVariables;
@@ -55,6 +57,7 @@ public:
     void preprocess();
     bool presolve();
     void launchSolve();
+    void timeThread();
     void branchOnVar(int var, int value);
     void unbranchOnVar(int var, std::vector<int> values);
     void solve();

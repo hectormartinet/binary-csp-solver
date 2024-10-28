@@ -25,11 +25,11 @@ void Solver::translateParameters(const std::vector<std::string> _parameters){
     else if (_valueChooser == "random") valueChooser = std::make_unique<RandomValueChooser>();
     else throw std::logic_error("Wrong value chooser");
 
-    timeLimit = stoi(parameters[3]);
+    timeLimit = std::stoi(parameters[3]);
     if (timeLimit == -1) timeLimit=INT_MAX;
 
-    if (parameters[4] == "" || stoi(parameters[4]) < 0) randomSeed = (unsigned int)(time(NULL)) ;
-    else randomSeed = stoi(parameters[4]);
+    if (parameters[4] == "" || std::stoi(parameters[4]) < 0) randomSeed = (unsigned int)(time(NULL)) ;
+    else randomSeed = std::stoul(parameters[4]);
 }
 
 void Solver::checkFeasibility(CSP _problem) {

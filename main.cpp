@@ -4,7 +4,7 @@
 #include "solver.h"
 
 int main(int argc, char** argv) {
-    if (argc < 7) {
+    if (argc < 8) {
         std::cout << "Usage: run filePath solveMethod variableChooser valueChooser verbosity timeLimit" << std::endl;
         exit(1);
     }
@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
     const std::vector<std::string> parameters = {_solveMethod, _variableChooser, _valueChooser, _timeLimit, _randomSeed};
 
     CSP csp(modelPath);
-    Solver solver(csp, parameters, stoi(_verbosity));
+    Solver solver(csp, parameters, std::stoi(_verbosity));
 
     solver.solve();
     // if (checkFeasibility == "1") solver.checkFeasibility(csp);

@@ -7,7 +7,7 @@ if __name__ == "__main__":
     success_tests = 0
     for i, file in enumerate(all_files):
         print(file)
-        result = subprocess.run(['./run.exe', './Tests/' + file,  'LP',  'random',  'random',  '0'], stdout=subprocess.PIPE, text=True)
+        result = subprocess.run(['./run.exe', './Tests/' + file,  'LP',  'smallest',  'random',  '0', '10', '0'], stdout=subprocess.PIPE, text=True)
         success_tests+=1
         # for line in iter(result.stdout.readline, ''):
         #     line = line.replace('\r', '').replace('\n', '')

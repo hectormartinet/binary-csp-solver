@@ -22,10 +22,10 @@ int main(int argc, char** argv) {
     const std::vector<std::string> parameters = {_solveMethod, _variableChooser, _valueChooser, _timeLimit, _randomSeed, _nbSolutions};
 
     CSP csp(_modelPath);
-    Solver solver(csp, parameters, stoi(_verbosity));
+    Solver solver(csp, parameters, std::stoi(_verbosity));
 
     solver.solve();
-    
+
     solver.checkFeasibility(csp);
     if (solver.hasFoundSolution()) solver.checkFeasibility(csp);
     if (stoi(_checkIfFoundSolution)) assert(solver.hasFoundSolution());

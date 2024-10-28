@@ -57,7 +57,7 @@ QueenProblem ProblemReader::readQueenProblem(std::string path) {
     std::string line;
     std::getline(inputFile, line);
     std::getline(inputFile, line);
-    problem.nb_queens = stoi(line);
+    problem.nb_queens = std::stoi(line);
     return problem;
 }
 
@@ -68,7 +68,7 @@ BlockedQueenProblem ProblemReader::readBlockedQueenProblem(std::string path) {
     std::string line;
     std::getline(inputFile, line);
     std::getline(inputFile, line);
-    problem.nb_queens = stoi(line);
+    problem.nb_queens = std::stoi(line);
     std::string word;
     while (std::getline(inputFile, line)) {
         std::stringstream ss(line);
@@ -113,6 +113,51 @@ NonogramProblem ProblemReader::readNonogramProblem(std::string path) {
         
         while (ss >> word) {
             problem.horizontalClues.back().push_back(std::stoul(word));
+        }
+    }
+    return problem;
+}
+
+GenericProblem ProblemReader::readGenericProblem(std::string path) {
+    std::ifstream inputFile(path);
+    GenericProblem problem;
+
+    std::string line;
+    std::string word;
+    std::stringstream ss;
+    std::getline(inputFile, line);
+    std::getline(inputFile, line);
+    ss = std::stringstream(line);
+    ss >> word;
+    problem.nbVar = std::stoul(word);
+    ss >> word;
+    problem.nbConstr = std::stoul(word);
+    problem.variables = std::vector<int>(problem.nbVar);
+    problem.domains = std::vector<std::vector<int>>(problem.nbVar);
+    problem.constrVar = std::vector<std::pair<int, int>>(problem.nbConstr);
+    problem.constrVal = std::vector<std::vector<std::pair<int, int>>>(problem.nbConstr);
+    for (unsigned int i=0; i<problem.nbVar; i++) {
+        std::getline(inputFile, line);
+        ss = std::stringstream(line);
+        ss >> word;
+        problem.variables[i] = std::stoi(word);
+        while (ss >> word) {
+            problem.domains[i].push_back(std::stoi(word));
+        }
+    }
+    for (unsigned int i=0; i<problem.nbConstr; i++) {
+        std::getline(inputFile, line);
+        ss = std::stringstream(line);
+        ss >> word;
+        int var1 = std::stoi(word);
+        ss >> word;
+        int var2 = std::stoi(word);
+        problem.constrVar[i] = std::make_pair(var1,var2);
+        while (ss >> word) {
+            int val1 = std::stoi(word);
+            ss >> word;
+            int val2 = std::stoi(word);
+            problem.constrVal[i].push_back(std::make_pair(val1,val2));
         }
     }
     return problem;

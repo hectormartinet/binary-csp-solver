@@ -45,6 +45,7 @@ public:
     void addIntensiveConstraint(std::pair<int,int> pair, const std::function<bool(int,int)>& validPair, bool symetricFunction=false) {return addIntensiveConstraint(pair.first, pair.second, validPair, symetricFunction);};
     
     void addConstraintValuePair(int x, int y, int a, int b);
+    void addConstraintValuePair(std::pair<int,int> vars, std::pair<int,int> values) {return addConstraintValuePair(vars.first, vars.second, values.first, values.second);}
     void removeConstraintValuePair(int x, int y, int a, int b);
 
     const std::unordered_set<int>& getVariables() const{return variables;}
@@ -66,6 +67,7 @@ public:
     void init(const BlockedQueenProblem& problem);
     void init(const SudokuProblem& problem);
     void init(const NonogramProblem& problem);
+    void init(const GenericProblem& problem);
 
     void extensify();
     

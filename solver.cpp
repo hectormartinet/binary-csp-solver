@@ -25,14 +25,14 @@ void Solver::translateParameters(const std::vector<std::string> _parameters){
     else if (_valueChooser == "random") valueChooser = std::make_unique<RandomValueChooser>();
     else throw std::logic_error("Wrong value chooser");
 
-    timeLimit = stoi(parameters[3]);
+    timeLimit = std::stoi(parameters[3]);
     if (timeLimit == -1) timeLimit=INT_MAX;
 
-    if (parameters[4] == "" || stoi(parameters[4]) < 0) randomSeed = (unsigned int)(time(NULL)) ;
-    else randomSeed = stoi(parameters[4]);
+    if (parameters[4] == "" || std::stoi(parameters[4]) < 0) randomSeed = (unsigned int)(time(NULL)) ;
+    else randomSeed = std::stoul(parameters[4]);
 
     if (parameters[5] == "all") nbSolutions = INT_MAX;
-    else nbSolutions = stoi(parameters[5]);
+    else nbSolutions = std::stoi(parameters[5]);
 }
 
 void Solver::checkFeasibility(CSP _problem) {
@@ -285,7 +285,7 @@ void Solver::solve() {
     }
     state = State::Solve;
     displaySolveInformation();
-    solve_time = clock();
+    start_time = clock();
     std::vector<std::thread> threads;
     if (timeLimit < INT_MAX) threads.emplace_back(std::thread(&Solver::timeThread, this));
     threads.emplace_back(std::thread(&Solver::launchSolve, this));
@@ -297,11 +297,8 @@ void Solver::solve() {
 
 void Solver::timeThread() {
     while(state == State::Solve) {
-        int time = (int)(clock() - solve_time)/CLOCKS_PER_SEC;
-        if (time > timeLimit) {
-            solve_time = timeLimit * CLOCKS_PER_SEC;
-            state = State::Stop;
-        }
+        int time = (int)(clock() - start_time)/CLOCKS_PER_SEC;
+        if (time >= timeLimit) state = State::Stop;
     }
 }
 
@@ -309,7 +306,7 @@ void Solver::launchSolve() {
     srand(randomSeed);
     recursiveSolve();
     foundSolution = solutions.size() > 0;
-    if (solve_time < timeLimit * CLOCKS_PER_SEC) solve_time = clock() - solve_time;
+    solve_time = clock() - start_time;
     state = State::Stop;
 }
 
@@ -363,7 +360,7 @@ void Solver::solveVerbosity() {
     std::cout << " Time | n solutions | Best depth | Nodes explored"  << std::endl;
     std::cout << "-------------------------------------------------" << std::endl;
     while (state == State::Solve) {
-        int time = std::max((int)(clock() - solve_time)/CLOCKS_PER_SEC,0);
+        int time = std::max((int)(clock() - start_time)/CLOCKS_PER_SEC,0);
         std::cout << time << "       "  << solutions.size() << "            " << bestDepth << "            " << nbNodesExplored << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     }

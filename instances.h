@@ -4,6 +4,15 @@
 #include <bitset>
 #include <vector>
 
+struct GenericProblem {
+    unsigned int nbVar;
+    unsigned int nbConstr;
+    std::vector<int> variables;
+    std::vector<std::vector<int>> domains;
+    std::vector<std::pair<int,int>> constrVar;
+    std::vector<std::vector<std::pair<int,int>>> constrVal;
+};
+
 struct ColorProblem {
     int nb_nodes;
     int nb_edges;

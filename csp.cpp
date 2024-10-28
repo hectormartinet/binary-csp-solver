@@ -200,6 +200,7 @@ void CSP::init(std::string path) {
     case Problem::Color: return init(ProblemReader::readColorProblem(path));
     case Problem::Sudoku: return init(ProblemReader::readSudokuProblem(path));
     case Problem::Nonogram: return init(ProblemReader::readNonogramProblem(path));
+    case Problem::Generic: return init(ProblemReader::readGenericProblem(path));
     default: std::cerr << "Wrong model" << path << std::endl;
     }
 }
@@ -315,6 +316,27 @@ void CSP::init(const NonogramProblem& problem) {
                 jValues[(unsigned int)(b)] = allHorizontalPossibilities[(unsigned int)(j)][(unsigned int)(b)][(unsigned int)(i)];
             }
             addIntensiveConstraint(i, w + j, [iValues,jValues](int a, int b) {return iValues[(unsigned int)(a)] == jValues[(unsigned int)(b)];});
+        }
+    }
+}
+
+void CSP::init(const GenericProblem& problem) {
+
+    // Variables & Domains
+    for (unsigned int i=0; i<problem.nbVar; i++) {
+        int var = problem.variables[i];
+        addVariable(var);
+        for (int value:problem.domains[i]) {
+            addVariableValue(var,value);
+        }
+    }
+
+    // Constraints
+    for (unsigned int i=0; i<problem.nbConstr; i++) {
+        std::pair<int,int> vars = problem.constrVar[i];
+        addConstraint(vars);
+        for (std::pair<int,int> values : problem.constrVal[i]) {
+            addConstraintValuePair(vars,values);
         }
     }
 }

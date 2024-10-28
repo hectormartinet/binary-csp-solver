@@ -46,7 +46,8 @@ private:
     State state = State::Preprocess;
     unsigned int nbNodesExplored=0;
     int bestDepth=0;
-    clock_t solve_time;
+    clock_t start_time;
+    clock_t solve_time=0.;
     bool foundSolution=false;
 
 public:

@@ -31,21 +31,23 @@ private:
     bool verbosity=true;
     int timeLimit;
     unsigned int randomSeed;
+    unsigned int nbSolutions=1;
 
     std::unordered_map<int,int> setVariables;
+    std::vector<std::vector<int>> deltaSetVars;
     std::unordered_set<int> unsetVariables;
     std::vector<std::vector<std::pair<int,int>>> deltaDomains;
-    std::vector<std::vector<int>> deltaSetVars;
     std::vector<std::vector<std::tuple<int, int, int, int>>> deltaConstrValPair;
+    std::vector<std::unordered_map<int,int>> solutions;
+
+    std::unordered_set<std::pair<int,int>,PairHash> AC4List;
+    std::unordered_set<std::pair<int,int>,PairHash> lazyPropagateList;
 
     State state = State::Preprocess;
     unsigned int nbNodesExplored=0;
     int bestDepth=0;
     clock_t solve_time;
     bool foundSolution=false;
-
-    std::unordered_set<std::pair<int,int>,PairHash> AC4List;
-    std::unordered_set<std::pair<int,int>,PairHash> lazyPropagateList;
 
 public:
     Solver(CSP _problem, const std::vector<std::string> _parameters, bool _verbosity);
@@ -88,7 +90,7 @@ public:
     unsigned int getNbNodesExplored() const{return nbNodesExplored;}
     bool hasFoundSolution() {return foundSolution;}
 
-    void solve_verbosity();
+    void solveVerbosity();
     void displayModelInformation() const;
     void displaySolveInformation() const;
     void displayFinalInformation() const;

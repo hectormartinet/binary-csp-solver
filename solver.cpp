@@ -7,7 +7,7 @@ Solver::Solver(CSP _problem, const std::vector<std::string> _parameters, bool _v
 }
 
 void Solver::translateParameters(const std::vector<std::string> _parameters){
-    assert(_parameters.size() == 5);
+    assert(_parameters.size() == 6);
     std::string _solveMethod = _parameters[0];
     if (_solveMethod == "AC4") solveMethod = SolveMethod::AC4;
     else if (_solveMethod == "FC") solveMethod = SolveMethod::ForwardChecking;
@@ -30,6 +30,9 @@ void Solver::translateParameters(const std::vector<std::string> _parameters){
 
     if (parameters[4] == "" || stoi(parameters[4]) < 0) randomSeed = (unsigned int)(time(NULL)) ;
     else randomSeed = stoi(parameters[4]);
+
+    if (parameters[5] == "all") nbSolutions = INT_MAX;
+    else nbSolutions = stoi(parameters[5]);
 }
 
 void Solver::checkFeasibility(CSP _problem) {
@@ -121,7 +124,7 @@ bool Solver::initAC4Root() {
 }
 
 bool Solver::initAC4Solve(int var, int value, std::vector<int> oldDomain) {
-    assert(state == State::Solve);
+    assert(state != State::Preprocess);
     for (int d : oldDomain) {
         if (d != value) addAC4List(var, d);
     }
@@ -245,6 +248,7 @@ bool Solver::presolve() {
             break;
         }
     }
+    if (unsetVariables.size() == 0) solutions.push_back(setVariables);
     std::cout << "Presolve fixed " << setVariables.size()<< "/" << problem.nbVar() << " variables"<<std::endl;
     std::cout << std::endl;
     return true;
@@ -274,7 +278,7 @@ void Solver::solve() {
         std::cout << "inconsistent" << std::endl;
         return;
     }
-    if (unsetVariables.empty()) {
+    if (solutions.size()) {
         foundSolution = true;
         displayFinalInformation();
         return;
@@ -285,7 +289,7 @@ void Solver::solve() {
     std::vector<std::thread> threads;
     if (timeLimit < INT_MAX) threads.emplace_back(std::thread(&Solver::timeThread, this));
     threads.emplace_back(std::thread(&Solver::launchSolve, this));
-    if (verbosity) threads.emplace_back(std::thread(&Solver::solve_verbosity, this));
+    if (verbosity) threads.emplace_back(std::thread(&Solver::solveVerbosity, this));
     for (auto& t : threads) t.join();
 
     displayFinalInformation();
@@ -303,7 +307,8 @@ void Solver::timeThread() {
 
 void Solver::launchSolve() {
     srand(randomSeed);
-    foundSolution = recursiveSolve();
+    recursiveSolve();
+    foundSolution = solutions.size() > 0;
     if (solve_time < timeLimit * CLOCKS_PER_SEC) solve_time = clock() - solve_time;
     state = State::Stop;
 }
@@ -326,7 +331,11 @@ bool Solver::checkConsistent(int var, int value) {
 
 bool Solver::recursiveSolve() {
     if (state == State::Stop) return false;
-    if (unsetVariables.empty()) return true;
+    if (unsetVariables.empty()) {
+        solutions.push_back(setVariables);
+        if (solutions.size() == nbSolutions) return true;
+        return false;
+    }
     int currentDepth = (int) setVariables.size() + 1;
     if (currentDepth > bestDepth) bestDepth = currentDepth;
     int var = chooseVar();
@@ -350,17 +359,17 @@ bool Solver::recursiveSolve() {
     return false;
 }
 
-void Solver::solve_verbosity() {
-    std::cout << "Time   | Best depth | Nodes explored"  << std::endl;
-    std::cout << "------------------------------------" << std::endl;
+void Solver::solveVerbosity() {
+    std::cout << " Time | n solutions | Best depth | Nodes explored"  << std::endl;
+    std::cout << "-------------------------------------------------" << std::endl;
     while (state == State::Solve) {
         int time = std::max((int)(clock() - solve_time)/CLOCKS_PER_SEC,0);
-        std::cout << time << "        " << bestDepth << "            " << nbNodesExplored << std::endl;
+        std::cout << time << "       "  << solutions.size() << "            " << bestDepth << "            " << nbNodesExplored << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     }
     int actualTime = std::min(std::max((int)(solve_time)/CLOCKS_PER_SEC,0), timeLimit);
-    std::cout << actualTime << "        " << bestDepth << "            " << nbNodesExplored << std::endl;
-    std::cout << "------------------------------------" << std::endl;
+    std::cout << actualTime << "       "  << solutions.size() << "            " << bestDepth << "            " << nbNodesExplored << std::endl;
+    std::cout << "-------------------------------------------------" << std::endl;
 }
 
 void Solver::displayModelInformation() const{
@@ -377,12 +386,13 @@ void Solver::displaySolveInformation() const{
     std::cout << "; valChooser=" << parameters[2];
     if (timeLimit < INT_MAX) std::cout << "; timeLimit=" << parameters[3];
     if ((parameters[1] == "random" || parameters[2] == "random")) std::cout << "; randomSeed=" << std::to_string(randomSeed);
+    std::cout << "; nbSolutions=" << parameters[5];
     std::cout << "; verbosity=" << std::to_string(verbosity);
     std::cout << ":"  << std::endl;
 }
 
 void Solver::displayFinalInformation() const{
-    if (foundSolution) std::cout << std::to_string(nbNodesExplored) + " nodes explored - Found solution" << std::endl;
+    if (foundSolution) std::cout << std::to_string(nbNodesExplored) + " nodes explored - Found " << solutions.size() << " solution" << std::endl;
     else if (solve_time >= timeLimit) std::cout << std::to_string(nbNodesExplored) + " nodes explored - no solution found" << std::endl;
     else std::cout << "infeasible" << std::endl;
     if (state == State::Stop)
@@ -390,9 +400,13 @@ void Solver::displayFinalInformation() const{
 }
 
 void Solver::displaySolution() const{
-    std::cout << "SOLUTION" << std::endl;
-    for (auto [var,value] : setVariables) {
-        std::cout << var << ":" << value << std::endl;
+    for (int i = 0; i < (int) solutions.size(); i++) {
+        std::cout << std::endl;
+        std::cout << "SOLUTION " << i + 1 << std::endl;
+        for (auto [var,value] : solutions[i]) {
+            std::cout << var << ":" << value << "; ";
+        }
+        std::cout << std::endl;
     }
 }
 

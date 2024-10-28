@@ -1,0 +1,10 @@
+Ecrire un test: file solveMethod variableChooser valueChooser timeLimit randomSeed nSolutions checkIfFoundSolution checkSolveAtRoot
+sudoku_AC.txt AC4 smallest copy 1 42 1 1 1
+sudoku_AC.txt LP smallest copy 1 42 1 1 1
+sudoku_hard_1.txt LP smallest copy 1 42 1 1 0
+sudoku_hard_2.txt LP smallest copy 1 42 1 1 0
+queens_75.txt LP smallest copy 1 42 100 1 0
+queens_100.txt LP smallest copy 1 42 5 1 0
+queens_125.txt LP random copy 1 12 1 1 0
+queens_150.txt LP random copy 1 12 1 1 0
+queens_300.txt LP random copy 1 12 1 1 0

@@ -9,8 +9,9 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--timeLimit', type=str, default='-1')
     parser.add_argument('-seed', '--randomSeed', type=str, default='')
     parser.add_argument('-v', '--verbosity', choices=['0', '1'], type=str, default='1')
+    parser.add_argument('-nSol', '--nbSolution', type=str, default='1')
     args = parser.parse_args()
-    result = subprocess.Popen(['./run.exe', args.file,  args.solveMethod,  args.varChooser,  args.valChooser,  args.verbosity, args.timeLimit, args.randomSeed], stdout=subprocess.PIPE, text=True)
+    result = subprocess.Popen(['./run.exe', args.file,  args.solveMethod,  args.varChooser,  args.valChooser,  args.verbosity, args.timeLimit, args.randomSeed, args.nbSolution, "0", "0"], stdout=subprocess.PIPE, text=True)
 
     for line in iter(result.stdout.readline, ''):
         line = line.replace('\r', '').replace('\n', '')

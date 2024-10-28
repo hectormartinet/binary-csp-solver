@@ -13,7 +13,7 @@ if __name__ == "__main__":
         parameters = test.split(" ")
         file = parameters[0]
         print(file)
-        result = subprocess.Popen(['./run.exe', './Tests/' + file,  parameters[1],  parameters[2],  parameters[3],  '1', parameters[4], parameters[5], parameters[6], parameters[7], parameters[8]], stdout=subprocess.PIPE, text=True, stderr=subprocess.PIPE)
+        result = subprocess.Popen(['./run.exe', './Tests/' + file,  parameters[1],  parameters[2],  parameters[3],  '0', parameters[4], parameters[5], parameters[6], parameters[7], parameters[8]], stdout=subprocess.PIPE, text=True, stderr=subprocess.PIPE)
         # for l in result.stdout:
         #     print(l)
         hasError = False

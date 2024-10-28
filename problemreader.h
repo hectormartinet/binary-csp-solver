@@ -13,7 +13,7 @@ public:
     static QueenProblem readQueenProblem(std::string path);
     static BlockedQueenProblem readBlockedQueenProblem(std::string path);
     static NonogramProblem readNonogramProblem(std::string path);
-    // static Problem readGenericProblem(std::string path);
+    static GenericProblem readGenericProblem(std::string path);
 };
 
 #endif

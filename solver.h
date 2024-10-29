@@ -64,7 +64,7 @@ public:
     void branchOnVar(int var, int value);
     void unbranchOnVar(int var, std::vector<int> values);
     void solve();
-    void flashback();
+    void backtrack();
     bool recursiveSolve();
     bool checkConsistent(int var, int value);
     

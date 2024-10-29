@@ -193,6 +193,7 @@ void CSP::readProblemType(std::string path) {
 
 void CSP::init(std::string path) {
     readProblemType(path);
+    std::cout << "Generating csp..." << std::endl;
     switch (problemType) 
     {
     case Problem::Queens: return init(ProblemReader::readQueenProblem(path));

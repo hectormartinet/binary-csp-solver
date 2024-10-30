@@ -19,7 +19,7 @@ public:
     }
 };
 enum class State {Preprocess, Solve, Stop};
-enum class SolveMethod {ForwardChecking, LazyPropagate, AC4};
+enum class SolveMethod {ForwardChecking, LazyPropagate, AC3, AC4};
 
 class Solver {
 
@@ -43,6 +43,7 @@ private:
     std::vector<std::vector<std::tuple<int, int, int, int>>> deltaConstrValPair;
 
     std::unordered_set<std::pair<int,int>,PairHash> AC4List;
+    std::unordered_set<std::pair<int,int>,PairHash> AC3List;
     std::unordered_set<std::pair<int,int>,PairHash> lazyPropagateList;
 
     std::vector<AllDifferentFamily> allDifferentFamilies;
@@ -94,9 +95,14 @@ public:
     bool initAC4Root();
     bool initAC4Solve(int var, int value, std::vector<int> values);    
     bool AC4();
+    bool initAC3Root();
+    bool initAC3Solve(int var);
+    bool AC3();
     bool checkAC();
     void addAC4List(int x, int a) {AC4List.emplace(std::make_pair(x, a));}
+    void addAC3List(int x, int y) {AC3List.emplace(std::make_pair(x, y));}
     void removeAC4List(int x, int a);
+    void removeAC3List(int x, int y);
 
     int chooseVar() {return varChooser->choose(problem,unsetVariables);}
     std::vector<int> chooseValue(int var) {return valueChooser->choose(problem,var);}

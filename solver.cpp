@@ -23,6 +23,7 @@ void Solver::setDefaultParameters() {
 
 void Solver::setRootSolveMethod(const std::string _rootSolveMethod) {
     if (_rootSolveMethod == "AC4") rootSolveMethod = SolveMethod::AC4;
+    else if (_rootSolveMethod == "AC3") rootSolveMethod = SolveMethod::AC3;
     else if (_rootSolveMethod == "FC") rootSolveMethod = SolveMethod::ForwardChecking;
     else if (_rootSolveMethod == "LP") rootSolveMethod = SolveMethod::LazyPropagate;
     else throw std::logic_error("Wrong root solve method");
@@ -31,6 +32,7 @@ void Solver::setRootSolveMethod(const std::string _rootSolveMethod) {
 
 void Solver::setNodeSolveMethod(const std::string _nodeSolveMethod) {
     if (_nodeSolveMethod == "AC4") nodeSolveMethod = SolveMethod::AC4;
+    else if (_nodeSolveMethod == "AC3") nodeSolveMethod = SolveMethod::AC3;
     else if (_nodeSolveMethod == "FC") nodeSolveMethod = SolveMethod::ForwardChecking;
     else if (_nodeSolveMethod == "LP") nodeSolveMethod = SolveMethod::LazyPropagate;
     else throw std::logic_error("Wrong node solve method");
@@ -193,6 +195,57 @@ bool Solver::initAC4Root() {
     return true;
 }
 
+void Solver::removeAC3List(int x, int y) {
+    AC3List.erase(std::make_pair(x,y));
+    int onlyVal = *problem.getDomain(y).begin();
+    if (problem.getDomainSize(y) == 1) setVar(y,onlyVal);
+}
+
+bool Solver::AC3() {
+    while (!AC3List.empty()) {
+        auto [x,y] = *AC3List.begin();
+        removeAC3List(x,y);
+        std::vector<int> domain;
+        domain.insert(domain.end(), problem.getDomain(x).begin(), problem.getDomain(x).end());
+        for (int v : domain) {
+            bool hasSupport = false;
+            for (int w : problem.getDomain(y)) {
+                if (problem.getConstraints().at(x).at(y)->feasible(v,w)) {
+                    hasSupport = true;
+                    break;
+                }
+            }
+            if (!hasSupport) {
+                if (!removeVarValue(x, v)) return false;
+                for (const auto& [z, Cxz] : problem.getConstraints().at(x)) {
+                    if (unsetVariables.count(z) && z != y) addAC3List(z, x);
+                }
+            }
+        }
+    }
+    return true;
+}
+
+bool Solver::initAC3Root() {
+    assert(solveMethod == SolveMethod::AC3);
+    assert(state == State::Preprocess);
+    for (const auto& [x,Cx] : problem.getConstraints()) {
+        for (const auto& [y,Cxy] : Cx) {
+            addAC3List(x, y);
+        }
+    }
+    return true;
+}
+
+bool Solver::initAC3Solve(int var) {
+    assert(solveMethod == SolveMethod::AC3);
+    assert(state == State::Solve);
+    for (const auto& [y,Cxy] : problem.getConstraints().at(var)) {
+        if (unsetVariables.count(y)) addAC3List(y, var);
+    }
+    return true;
+}
+
 bool Solver::initAC4Solve(int var, int value, std::vector<int> oldDomain) {
     assert(state != State::Preprocess);
     for (int d : oldDomain) {
@@ -258,6 +311,7 @@ void Solver::unsetVar(int var) {
 
 void Solver::backtrack() {
     AC4List.clear();
+    AC3List.clear();
     lazyPropagateList.clear();
     for (auto [y,b] : deltaDomains.back()) {
         problem.addVariableValue(y, b);
@@ -290,6 +344,10 @@ bool Solver::presolve() {
         if(!consistent) return false;
         assert(checkAC());
     }
+    if (solveMethod == SolveMethod::AC3) {
+        bool consistent = initAC3Root() && AC3();
+        if (!consistent) return false;
+    }
     for (int var: problem.getVariables()) {
         switch (problem.getDomainSize(var))
         {
@@ -299,7 +357,6 @@ bool Solver::presolve() {
         {
             int value = *problem.getDomain(var).begin();
             setVar(var, value);
-            // if (!feasible(var,value)) return false;
             switch (solveMethod) 
             {
             case SolveMethod::ForwardChecking:
@@ -391,6 +448,8 @@ bool Solver::checkConsistent(int var, int value) {
     {
     case SolveMethod::AC4: 
        return AC4();
+    case SolveMethod::AC3:
+        return AC3();
     case SolveMethod::ForwardChecking: 
         return forwardChecking(var, value);
     case SolveMethod::LazyPropagate: 
@@ -417,6 +476,7 @@ bool Solver::recursiveSolve() {
     for (int value : values) {
         branchOnVar(var, value);
         if (solveMethod == SolveMethod::AC4) initAC4Solve(var, value, values);
+        else if (solveMethod == SolveMethod::AC3) initAC3Solve(var);
         if (!checkConsistent(var, value)) {
             backtrack();
             continue;

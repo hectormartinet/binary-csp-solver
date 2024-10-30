@@ -3,8 +3,8 @@ import argparse
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--file', type=str, required=True)
-    parser.add_argument('-rootSolve', '--rootSolveMethod', choices=['LP', 'FC', 'AC4'], type=str, default='LP')
-    parser.add_argument('-nodeSolve', '--nodeSolveMethod', choices=['LP', 'FC', 'AC4'], type=str, default='LP')
+    parser.add_argument('-rootSolve', '--rootSolveMethod', choices=['LP', 'FC', 'AC4', 'AC3'], type=str, default='LP')
+    parser.add_argument('-nodeSolve', '--nodeSolveMethod', choices=['LP', 'FC', 'AC4', 'AC3'], type=str, default='LP')
     parser.add_argument('-var', '--varChooser', choices=['random', 'smallest', 'max'], type=str, default='random')
     parser.add_argument('-val', '--valChooser', choices=['random', 'smallest', 'copy'], type=str, default='random')
     parser.add_argument('-t', '--timeLimit', type=str, default='-1')

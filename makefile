@@ -11,7 +11,7 @@ ifeq ($(CONF),release)
 	CXXFLAGS += -O3
 endif
 
-SRC = main.cpp solver.cpp constraint.cpp problemreader.cpp csp.cpp instances.cpp
+SRC = main.cpp solver.cpp constraint.cpp problemreader.cpp csp.cpp instances.cpp alldifferentfamily.cpp
 
 run: $(SRC)
 	$(CXX) $(CXXFLAGS) -o run $(SRC)

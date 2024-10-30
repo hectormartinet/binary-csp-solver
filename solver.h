@@ -29,7 +29,7 @@ private:
     SolveMethod solveMethod;
     std::vector<std::string> parameters;
     bool verbosity=true;
-    int timeLimit;
+    int timeLimit=INT_MAX;
     unsigned int randomSeed;
     unsigned int nbSolutions=1;
 
@@ -52,7 +52,18 @@ private:
 
 public:
     Solver(CSP _problem, const std::vector<std::string> _parameters, bool _verbosity);
+    Solver(CSP _problem);
     void translateParameters(const std::vector<std::string> _parameters);
+    void setDefaultParameters();
+
+    void setSolveMethod(const std::string _solveMethod);
+    void setVarChooser(const std::string _varChooser);
+    void setValChooser(const std::string _valChooser);
+    void setValLambdaChooser(const std::function<bool(int,int)> lambda);
+    void setRandomSeed(const unsigned int _randomSeed);
+    void setTimeLimit(const int _timeLimit);
+    void setVerbosity(const bool _verbosity) {verbosity=_verbosity;}
+    void setNbSolutions(const unsigned int _nbSolutions);
 
     bool feasible() const{return problem.feasible(setVariables);}
     bool feasible(int var, int value) const {return problem.feasible(setVariables,var,value);}

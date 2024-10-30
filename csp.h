@@ -45,6 +45,7 @@ public:
     void addConstraint(std::pair<int,int> pair, const std::function<bool(int,int)>& validPair) {return addConstraint(pair.first, pair.second, validPair);}
     void addIntensiveConstraint(int x, int y, const std::function<bool(int,int)>& validPair, bool symetricFunction=false);
     void addIntensiveConstraint(std::pair<int,int> pair, const std::function<bool(int,int)>& validPair, bool symetricFunction=false) {return addIntensiveConstraint(pair.first, pair.second, validPair, symetricFunction);};
+    void addAllDifferentConstraint(const std::vector<int>& vars);
     void addAllDifferentFamily(const std::vector<int>& vars) {allDifferentFamilies.push_back(vars);}
 
     void addConstraintValuePair(int x, int y, int a, int b);
@@ -56,6 +57,7 @@ public:
     const std::unordered_map<int,std::unordered_map<int,std::unique_ptr<Constraint>>>& getConstraints() const{return constraints;}
    
     const std::unordered_set<int>& getDomain(int var) const{return domains.at(var);}
+    std::vector<int> getDomainCopy(int var) const;
     size_t getDomainSize(int var) const{return domains.at(var).size();}
 
     const std::vector<std::vector<int>>& getAllDifferentFamilies() {return allDifferentFamilies;}

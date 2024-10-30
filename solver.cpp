@@ -38,13 +38,15 @@ void Solver::translateParameters(const std::vector<std::string> _parameters){
 
 void Solver::initAllDifferent() {
     for (int var:problem.getVariables()) {
-        varToAllDifferent.emplace(var,std::vector<AllDifferentFamily*>());
+        varToAllDifferentFamilyIdx.emplace(var,std::vector<unsigned int>());
     }
+    unsigned int idx = 0;
     for (const auto& family : problem.getAllDifferentFamilies()) {
         allDifferentFamilies.push_back(AllDifferentFamily(family,problem.getDomains()));
         for (int var:family) {
-            varToAllDifferent.at(var).push_back(&allDifferentFamilies.back());
+            varToAllDifferentFamilyIdx.at(var).push_back(idx);
         }
+        idx++;
     }
 }
 
@@ -62,16 +64,65 @@ void Solver::removeConstraintValuePair(int x, int y, int a, int b) {
     problem.removeConstraintValuePair(x, y, a, b);
 }
 
-bool Solver::removeVarValue(int x, int a) {
-    if (state == State::Solve) deltaDomains.back().push_back(std::make_pair(x,a));
-    problem.removeVariableValue(x, a);
-    switch (problem.getDomainSize(x)) 
+void Solver::updateAddAllDiff(int var, int value) {
+    for (unsigned int familyIdx : varToAllDifferentFamilyIdx.at(var)) {
+        allDifferentFamilies[familyIdx].add(var, value);
+    }
+}
+
+bool Solver::updateRemoveAllDiff(int var, int value) {
+    std::vector<std::pair<int,int>> varsToFix;
+    for (unsigned int familyIdx : varToAllDifferentFamilyIdx.at(var)) {
+        if (!allDifferentFamilies[familyIdx].remove(var, value, varsToFix)) return false;
+    }
+    return fixVariables(varsToFix);
+}
+
+bool Solver::updateSetAllDiff(int var, int value, const std::vector<int>& values) {
+    if (varToAllDifferentFamilyIdx.at(var).empty()) return true;
+    for (int valToRemove : values) {
+        if (valToRemove != value) {
+            if (!updateRemoveAllDiff(var, valToRemove)) return false;
+        }
+    }
+    return true;
+}
+
+void Solver::backtrackAllDiff(int var, const std::vector<int>& values) {
+    if (varToAllDifferentFamilyIdx.at(var).empty()) return;
+    for (int value : values) {
+        updateAddAllDiff(var,value);
+    }
+}
+
+bool Solver::fixVariables(const std::vector<std::pair<int,int>>& varsToFix) {
+    for (auto [var,value] : varsToFix) {
+        if (setVariables.count(var)) continue;
+        for (int valToRemove : problem.getDomainCopy(var)) {
+            if (valToRemove != value) {
+                if (solveMethod == SolveMethod::AC4) {
+                    AC4List.emplace(var, valToRemove);
+                }
+                if (!removeVarValue(var, valToRemove)) return false;
+            }
+        }
+    }
+    return true;
+}
+
+
+bool Solver::removeVarValue(int var, int value) {
+    if (problem.getDomain(var).count(value)==0) return true;
+    if (state == State::Solve) deltaDomains.back().push_back(std::make_pair(var,value));
+    problem.removeVariableValue(var, value);
+    if (!updateRemoveAllDiff(var, value)) return false;
+    switch (problem.getDomainSize(var)) 
     {
     case 1:
     {
-        int onlyValue = *problem.getDomain(x).begin();
+        int onlyValue = *problem.getDomain(var).begin();
         if (solveMethod == SolveMethod::LazyPropagate) 
-            lazyPropagateList.emplace(std::make_pair(x,onlyValue));
+            lazyPropagateList.emplace(std::make_pair(var,onlyValue));
         break;
     }
     case 0: 
@@ -80,6 +131,11 @@ bool Solver::removeVarValue(int x, int a) {
         break;
     }
     return true;
+}
+
+void Solver::addVarValue(int var, int value) {
+    problem.addVariableValue(var, value);
+    updateAddAllDiff(var, value);
 }
 
 bool Solver::forwardChecking(int x, int a) {
@@ -208,7 +264,7 @@ void Solver::backtrack() {
     AC4List.clear();
     lazyPropagateList.clear();
     for (auto [y,b] : deltaDomains.back()) {
-        problem.addVariableValue(y, b);
+        addVarValue(y, b);
     }
     deltaDomains.pop_back();
 
@@ -232,6 +288,11 @@ void Solver::preprocess() {
 }
 
 bool Solver::presolve() {
+    std::vector<std::pair<int,int>> varsToFix;
+    for (const AllDifferentFamily& family : allDifferentFamilies) {
+        if (!family.init(varsToFix)) return false;
+    }
+    fixVariables(varsToFix);
     if (solveMethod == SolveMethod::AC4) {
         bool consistent = initAC4Root() && AC4();
         if(!consistent) return false;
@@ -283,7 +344,7 @@ void Solver::branchOnVar(int var, int value) {
 
 void Solver::unbranchOnVar(int var, std::vector<int> values) {
     for (int value : values) {
-        problem.addVariableValue(var, value);
+        addVarValue(var, value);
     }
 }
 
@@ -346,6 +407,7 @@ bool Solver::checkConsistent(int var, int value) {
 }
 
 bool Solver::recursiveSolve() {
+    // assert(allDifferentFamilies[0].isCoherent(problem.getDomains()));
     if (state == State::Stop) return false;
     if (unsetVariables.empty()) {
         solutions.push_back(setVariables);
@@ -359,9 +421,16 @@ bool Solver::recursiveSolve() {
 
     for (int value : values) {
         branchOnVar(var, value);
+        if (!updateSetAllDiff(var, value, values)) {
+            backtrack();
+            backtrackAllDiff(var, values);
+            continue;
+        }
+        // assert(allDifferentFamilies[0].isCoherent(problem.getDomains()));
         if (solveMethod == SolveMethod::AC4) initAC4Solve(var, value, values);
         if (!checkConsistent(var, value)) {
             backtrack();
+            backtrackAllDiff(var, values);
             continue;
         }
         if (solveMethod == SolveMethod::AC4) assert(checkAC());
@@ -369,6 +438,7 @@ bool Solver::recursiveSolve() {
         if (recursiveSolve()) return true;
         if (state == State::Stop) return false;
         backtrack();
+        backtrackAllDiff(var, values);
     }
     unbranchOnVar(var, values);
 

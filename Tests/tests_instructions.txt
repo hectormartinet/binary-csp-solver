@@ -8,6 +8,7 @@ queens_100.txt LP smallest random 1 42 5 1 0
 queens_125.txt LP smallest random 1 12 1 1 0
 queens_150.txt LP smallest random 1 12 1 1 0
 queens_300.txt LP smallest random 1 12 1 1 0
+blocked_queens_4.txt LP random random 1 42 1 1 1
 blocked_queens_50.txt LP smallest random 1 42 1 1 0
 blocked_queens_75.txt LP smallest random 1 42 1 1 0
 blocked_queens_100.txt LP smallest random 1 42 1 1 0

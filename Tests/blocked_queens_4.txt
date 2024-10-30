@@ -1,0 +1,5 @@
+blocked_queens
+4
+0 0
+0 1
+0 3

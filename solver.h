@@ -45,7 +45,7 @@ private:
     std::unordered_set<std::pair<int,int>,PairHash> lazyPropagateList;
 
     std::vector<AllDifferentFamily> allDifferentFamilies;
-    std::unordered_map<int,std::vector<AllDifferentFamily*>> varToAllDifferent; 
+    std::unordered_map<int,std::vector<unsigned int>> varToAllDifferentFamilyIdx; 
 
     State state = State::Preprocess;
     unsigned int nbNodesExplored=0;
@@ -91,7 +91,13 @@ public:
     void setVar(int var, int value);
     void unsetVar(int var);
     bool removeVarValue(int var, int value);
+    void addVarValue(int var, int value);
     void removeConstraintValuePair(int x, int y, int a, int b);
+    void updateAddAllDiff(int var, int value);
+    bool updateRemoveAllDiff(int var, int value);
+    bool updateSetAllDiff(int var, int value, const std::vector<int>& values);
+    void backtrackAllDiff(int var, const std::vector<int>& values);
+    bool fixVariables(const std::vector<std::pair<int,int>>& varsToFix);
     std::unordered_map<int,int> retrieveSolution() const{return setVariables;}
     unsigned int getNbNodesExplored() const{return nbNodesExplored;}
     bool hasFoundSolution() {return foundSolution;}

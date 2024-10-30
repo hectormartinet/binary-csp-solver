@@ -16,6 +16,7 @@ CSP::CSP(const CSP& csp) {
         }
     }
     nConstraints = csp.nbConstraints();
+    allDifferentFamilies = csp.allDifferentFamilies;
 }
 
 void CSP::addVariable(int var) {
@@ -104,6 +105,16 @@ void CSP::removeConstraintValuePair(int x, int y, int a, int b) {
     constraints.at(y).at(x)->removePair(b,a);// remove symmetric constraint values
 }
 
+void CSP::addAllDifferentConstraint(const std::vector<int>& vars) {
+    std::function<bool(int,int)> lambdaDifferent = [](int a, int b) {return a != b;};
+    for (unsigned int i=0; i<vars.size(); i++) {
+        for (unsigned int j=i+1; j<vars.size(); j++) {
+            addConstraint(vars[i], vars[j], lambdaDifferent);
+        }
+    }
+    addAllDifferentFamily(vars);
+}
+
 bool CSP::feasible(const std::unordered_map<int,int>& partSol) const{
 
     // Checking Domains
@@ -153,6 +164,10 @@ void CSP::init(const QueenProblem& problem){
             addIntensiveConstraint(x,y, [x, y](int a, int b) {return a!=b && std::abs(a-b)!=std::abs(x-y);}, true);
         }
     }
+
+    std::vector<int> vars((unsigned int)(n),0);
+    std::iota(vars.begin(), vars.end(), 0);
+    addAllDifferentFamily(vars);
 }
 
 void CSP::init(const BlockedQueenProblem& problem){
@@ -174,6 +189,10 @@ void CSP::init(const BlockedQueenProblem& problem){
             addIntensiveConstraint(x,y,[x,y](int a, int b) {return a!=b && std::abs(a-b)!=std::abs(x-y);}, true);
         }
     }
+
+    std::vector<int> vars((unsigned int)(n),0);
+    std::iota(vars.begin(), vars.end(), 0);
+    addAllDifferentFamily(vars);
 }
 
 void CSP::readProblemType(std::string path) {
@@ -184,7 +203,7 @@ void CSP::readProblemType(std::string path) {
     std::string type;
     std::getline(inputFile, type);
     if (type == "queens") problemType = Problem::Queens;
-    if (type == "blocked_queens") problemType = Problem::Queens;
+    if (type == "blocked_queens") problemType = Problem::BlockedQueens;
     if (type == "sudoku") problemType = Problem::Sudoku;
     if (type == "color") problemType = Problem::Color;
     if (type == "nonogram") problemType = Problem::Nonogram; 
@@ -197,7 +216,7 @@ void CSP::init(std::string path) {
     switch (problemType) 
     {
     case Problem::Queens: return init(ProblemReader::readQueenProblem(path));
-    case Problem::BlockedQueens: return init(ProblemReader::readQueenProblem(path));
+    case Problem::BlockedQueens: return init(ProblemReader::readBlockedQueenProblem(path));
     case Problem::Color: return init(ProblemReader::readColorProblem(path));
     case Problem::Sudoku: return init(ProblemReader::readSudokuProblem(path));
     case Problem::Nonogram: return init(ProblemReader::readNonogramProblem(path));
@@ -255,33 +274,35 @@ void CSP::init(const SudokuProblem& problem) {
         }
     }
 
-    auto lambdaDifferent = [](int a,int b) {return a != b;};
     // Constraints
+    // Lines
     for (int i=0; i<nInt; i++) {
+        std::vector<int> vars;
         for (int j=0; j<nInt; j++) {
-            int varIdx = nInt*i+j;
+            vars.push_back(nInt*i+j);
+        }
+        addAllDifferentConstraint(vars);
+    }
 
-            // Line constraint
-            for (int i2=i+1; i2<nInt; i2++) {
-                int var2Idx = nInt*i2+j;
-                addIntensiveConstraint(varIdx, var2Idx, lambdaDifferent, true);
-            }
+    // Columns
+    for (int j=0; j<nInt; j++) {
+        std::vector<int> vars;
+        for (int i=0; i<nInt; i++) {
+            vars.push_back(nInt*i+j);
+        }
+        addAllDifferentConstraint(vars);
+    }
 
-            // Column constraint
-            for (int j2=j+1; j2<nInt; j2++) {
-                int var2Idx = nInt*i+j2;
-                addIntensiveConstraint(varIdx, var2Idx, lambdaDifferent, true);
-            }
-
-            // Square constraint
-            for (int i2=i+1; i2<sqrLen*(i/sqrLen+1); i2++) {
-                int j_start = j-j%sqrLen;
-                for (int j2=j_start; j2<sqrLen*(j/sqrLen+1); j2++) {
-                    if (j2==j) continue;
-                    int var2Idx = nInt*i2+j2;
-                    addIntensiveConstraint(varIdx, var2Idx, lambdaDifferent, true);
+    // Squares
+    for (int iSqr=0; iSqr<sqrLen; iSqr++){
+        for (int jSqr=0; jSqr<sqrLen; jSqr++){
+            std::vector<int> vars;
+            for (int i=iSqr*sqrLen; i<(iSqr+1)*sqrLen; i++){
+                for (int j=jSqr*sqrLen; j<(jSqr+1)*sqrLen; j++){
+                    vars.push_back(nInt*i+j);
                 }
             }
+            addAllDifferentConstraint(vars);
         }
     }
 }
@@ -377,4 +398,10 @@ void CSP::display(bool removeSymmetry) const {
         }
     }
     std::cout << std::endl;
+}
+
+std::vector<int> CSP::getDomainCopy(int var) const {
+    std::vector<int> copy(domains.at(var).size());
+    std::copy(domains.at(var).begin(), domains.at(var).end(), copy.begin());
+    return copy;
 }

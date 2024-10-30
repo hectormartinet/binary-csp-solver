@@ -27,6 +27,8 @@ private:
     CSP problem;
     std::unique_ptr<VariableChooser> varChooser;
     std::unique_ptr<ValueChooser> valueChooser;
+    SolveMethod rootSolveMethod;
+    SolveMethod nodeSolveMethod;
     SolveMethod solveMethod;
     std::vector<std::string> parameters;
     bool verbosity=true;
@@ -39,7 +41,6 @@ private:
     std::unordered_set<int> unsetVariables;
     std::vector<std::vector<std::pair<int,int>>> deltaDomains;
     std::vector<std::vector<std::tuple<int, int, int, int>>> deltaConstrValPair;
-    std::vector<std::unordered_map<int,int>> solutions;
 
     std::unordered_set<std::pair<int,int>,PairHash> AC4List;
     std::unordered_set<std::pair<int,int>,PairHash> lazyPropagateList;
@@ -52,7 +53,7 @@ private:
     int bestDepth=0;
     clock_t start_time;
     clock_t solve_time=0.;
-    bool foundSolution=false;
+    std::vector<std::unordered_map<int,int>> solutions;
 
 public:
     Solver(CSP _problem, const std::vector<std::string> _parameters, bool _verbosity);
@@ -60,7 +61,8 @@ public:
     void translateParameters(const std::vector<std::string> _parameters);
     void setDefaultParameters();
 
-    void setSolveMethod(const std::string _solveMethod);
+    void setRootSolveMethod(const std::string _rootSolveMethod);
+    void setNodeSolveMethod(const std::string _nodeSolveMethod);
     void setVarChooser(const std::string _varChooser);
     void setValChooser(const std::string _valChooser);
     void setValLambdaChooser(const std::function<bool(int,int)> lambda);
@@ -105,7 +107,7 @@ public:
     void removeConstraintValuePair(int x, int y, int a, int b);
     std::unordered_map<int,int> retrieveSolution() const{return setVariables;}
     unsigned int getNbNodesExplored() const{return nbNodesExplored;}
-    bool hasFoundSolution() {return foundSolution;}
+    bool hasFoundSolution() const {return (solutions.size() > 0);}
 
     void solveVerbosity();
     void displayModelInformation() const;

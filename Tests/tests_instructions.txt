@@ -1,16 +1,16 @@
-Ecrire un test: file solveMethod variableChooser valueChooser timeLimit randomSeed nSolutions checkIfFoundSolution checkSolveAtRoot
-sudoku_AC.txt AC4 smallest copy 1 42 1 1 1
-sudoku_AC.txt LP smallest copy 1 42 1 1 1
-sudoku_hard_1.txt LP smallest copy 1 42 1 1 0
-sudoku_hard_2.txt LP smallest copy 1 42 1 1 0
-queens_75.txt LP smallest random 1 42 100 1 0
-queens_100.txt LP smallest random 1 42 5 1 0
-queens_125.txt LP smallest random 1 12 1 1 0
-queens_150.txt LP smallest random 1 12 1 1 0
-queens_300.txt LP smallest random 1 12 1 1 0
-blocked_queens_50.txt LP smallest random 1 42 1 1 0
-blocked_queens_75.txt LP smallest random 1 42 1 1 0
-blocked_queens_100.txt LP smallest random 1 42 1 1 0
-generic.txt AC4 random random 1 42 1 0 0
-nonogram_easy.txt LP smallest random 1 42 1 1 0
-nonogram_medium.txt LP smallest random 1 42 1 1 0
+Ecrire un test: file rootSolveMethod nodeSolveMethod variableChooser valueChooser timeLimit randomSeed nSolutions checkIfFoundSolution checkSolveAtRoot
+sudoku_AC.txt AC4 AC4 smallest copy 1 42 1 1 1
+sudoku_AC.txt LP LP smallest copy 1 42 1 1 1
+sudoku_hard_1.txt LP LP smallest copy 1 42 1 1 0
+sudoku_hard_2.txt LP LP smallest copy 1 42 1 1 0
+queens_75.txt LP LP smallest random 1 42 100 1 0
+queens_100.txt LP LP smallest random 1 42 5 1 0
+queens_125.txt LP LP smallest random 1 12 1 1 0
+queens_150.txt LP LP smallest random 1 12 1 1 0
+queens_300.txt LP LP smallest random 1 12 1 1 0
+blocked_queens_50.txt LP LP smallest random 1 42 1 1 0
+blocked_queens_75.txt LP LP smallest random 1 42 1 1 0
+blocked_queens_100.txt LP LP smallest random 1 42 1 1 0
+generic.txt AC4 AC4 random random 1 42 1 0 0
+nonogram_easy.txt LP LP smallest random 1 42 1 1 0
+nonogram_medium.txt LP LP smallest random 1 42 1 1 0

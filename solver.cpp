@@ -13,19 +13,28 @@ Solver::Solver(CSP _problem) : problem(_problem) {
 }
 
 void Solver::setDefaultParameters() {
-    solveMethod = SolveMethod::LazyPropagate;
+    rootSolveMethod = SolveMethod::LazyPropagate;
+    nodeSolveMethod = SolveMethod::LazyPropagate;
     varChooser = std::make_unique<SmallestDomainVariableChooser>();
     valueChooser = std::make_unique<CopyValueChooser>();
     randomSeed = (unsigned int)(time(NULL));
-    parameters = {"LP", "smallest", "copy", " ", std::to_string(randomSeed), "1"};
+    parameters = {"LP", "LP", "smallest", "copy", " ", std::to_string(randomSeed), "1"};
 }
 
-void Solver::setSolveMethod(const std::string _solveMethod) {
-    if (_solveMethod == "AC4") solveMethod = SolveMethod::AC4;
-    else if (_solveMethod == "FC") solveMethod = SolveMethod::ForwardChecking;
-    else if (_solveMethod == "LP") solveMethod = SolveMethod::LazyPropagate;
-    else throw std::logic_error("Wrong solve method");
-    parameters[0] = _solveMethod;
+void Solver::setRootSolveMethod(const std::string _rootSolveMethod) {
+    if (_rootSolveMethod == "AC4") rootSolveMethod = SolveMethod::AC4;
+    else if (_rootSolveMethod == "FC") rootSolveMethod = SolveMethod::ForwardChecking;
+    else if (_rootSolveMethod == "LP") rootSolveMethod = SolveMethod::LazyPropagate;
+    else throw std::logic_error("Wrong root solve method");
+    parameters[0] = _rootSolveMethod;
+}
+
+void Solver::setNodeSolveMethod(const std::string _nodeSolveMethod) {
+    if (_nodeSolveMethod == "AC4") nodeSolveMethod = SolveMethod::AC4;
+    else if (_nodeSolveMethod == "FC") nodeSolveMethod = SolveMethod::ForwardChecking;
+    else if (_nodeSolveMethod == "LP") nodeSolveMethod = SolveMethod::LazyPropagate;
+    else throw std::logic_error("Wrong node solve method");
+    parameters[1] = _nodeSolveMethod;
 }
 
 void Solver::setVarChooser(const std::string _variableChooser) {
@@ -33,7 +42,7 @@ void Solver::setVarChooser(const std::string _variableChooser) {
     else if (_variableChooser == "random") varChooser = std::make_unique<RandomVariableChooser>();
     else if (_variableChooser == "max") varChooser = std::make_unique<MaxConstraintVariableChooser>();
     else throw std::logic_error("Wrong variable chooser");
-    parameters[1] = _variableChooser;
+    parameters[2] = _variableChooser;
 }
 
 void Solver::setValChooser(const std::string _valueChooser) {
@@ -41,42 +50,43 @@ void Solver::setValChooser(const std::string _valueChooser) {
     else if (_valueChooser == "smallest") valueChooser = std::make_unique<SmallestValueChooser>();
     else if (_valueChooser == "random") valueChooser = std::make_unique<RandomValueChooser>();
     else throw std::logic_error("Wrong value chooser");
-    parameters[2] = _valueChooser;
+    parameters[3] = _valueChooser;
 }
 
 void Solver::setValLambdaChooser(const std::function<bool(int,int)> lambda) {
     valueChooser = std::make_unique<LambdaValueChooser>(lambda);
-    parameters[2] = "lambda";
+    parameters[3] = "lambda";
 }
 
 void Solver::setTimeLimit(const int _timeLimit) {
     if (_timeLimit>=0) {
         timeLimit = _timeLimit;
-        parameters[3] = std::to_string(_timeLimit);
+        parameters[4] = std::to_string(_timeLimit);
     }
 }
 
 void Solver::setRandomSeed(const unsigned int _randomSeed) {
     randomSeed =_randomSeed;
-    parameters[4] = std::to_string(_randomSeed);
+    parameters[5] = std::to_string(_randomSeed);
 }
 
 void Solver::setNbSolutions(const unsigned int _nbSolutions) {
     nbSolutions = _nbSolutions; 
-    parameters[5] = (_nbSolutions == INT_MAX) ? "all" : std::to_string(_nbSolutions);
+    parameters[6] = (_nbSolutions == INT_MAX) ? "all" : std::to_string(_nbSolutions);
 }
 
 void Solver::translateParameters(const std::vector<std::string> _parameters){
-    assert(_parameters.size() == 6);
-    setSolveMethod(_parameters[0]);
-    setVarChooser(_parameters[1]);
-    setValChooser(_parameters[2]);
-    setTimeLimit(std::stoi(parameters[3]));
+    assert(_parameters.size() == 7);
+    setRootSolveMethod(_parameters[0]);
+    setNodeSolveMethod(_parameters[1]);
+    setVarChooser(_parameters[2]);
+    setValChooser(_parameters[3]);
+    setTimeLimit(std::stoi(parameters[4]));
 
-    if (parameters[4] == "" || std::stoi(parameters[4]) < 0) setRandomSeed((unsigned int)(time(NULL))) ;
-    else setRandomSeed(std::stoul(parameters[4]));
+    if (parameters[5] == "" || std::stoi(parameters[5]) < 0) setRandomSeed((unsigned int)(time(NULL))) ;
+    else setRandomSeed(std::stoul(parameters[5]));
 
-    unsigned int _nbSolutions = (parameters[5] == "all") ? INT_MAX : std::stoul(parameters[5]);
+    unsigned int _nbSolutions = (parameters[6] == "all") ? INT_MAX : std::stoul(parameters[6]);
     setNbSolutions(_nbSolutions);
 }
 
@@ -93,11 +103,9 @@ void Solver::initAllDifferent() {
 }
 
 void Solver::checkFeasibility(CSP _problem) {
-    if (foundSolution) {
-        for (const auto &sol : solutions) {
-            assert(sol.size() == problem.nbVar());
-            assert(_problem.feasible(sol));
-        }
+    for (const auto &sol : solutions) {
+        assert(sol.size() == problem.nbVar());
+        assert(_problem.feasible(sol));
     }
 }
 
@@ -268,8 +276,9 @@ void Solver::backtrack() {
 }
 
 void Solver::preprocess() {
+    std::cout << "Launch presolve with rootSolveMethod=" << parameters[0] << ":" << std::endl;
     if (solveMethod == SolveMethod::AC4) {
-        std::cout << "Extensify constraints for AC4...";
+        std::cout << "Extensify constraints for AC4..." << std::endl;
         problem.extensify();
         std::cout << "Done." << std::endl;
     }
@@ -334,6 +343,11 @@ void Solver::unbranchOnVar(int var, std::vector<int> values) {
 void Solver::solve() {
     displayLogo();
     displayModelInformation();
+    if (nodeSolveMethod > rootSolveMethod) {
+        rootSolveMethod = nodeSolveMethod;
+        parameters[0] = parameters[1];
+    }
+    solveMethod = rootSolveMethod;
 
     preprocess();
 
@@ -341,11 +355,11 @@ void Solver::solve() {
         std::cout << "inconsistent" << std::endl;
         return;
     }
-    if (solutions.size()) {
-        foundSolution = true;
+    if (hasFoundSolution()) {
         displayFinalInformation();
         return;
     }
+    solveMethod = nodeSolveMethod;
     state = State::Solve;
     displaySolveInformation();
     start_time = clock();
@@ -368,7 +382,6 @@ void Solver::timeThread() {
 void Solver::launchSolve() {
     srand(randomSeed);
     recursiveSolve();
-    foundSolution = solutions.size() > 0;
     solve_time = clock() - start_time;
     state = State::Stop;
 }
@@ -437,22 +450,23 @@ void Solver::displayModelInformation() const{
     std::cout << "Initial problem: ";
     std::cout << problem.nbVar() << " variables / ";
     std::cout << problem.nbConstraints() << " constraints" << std::endl;
+    std::cout << std::endl;
 }
 
 void Solver::displaySolveInformation() const{
-    std::cout << "Launch solve with ";
-    std::cout << "solveMethod=" << parameters[0];
-    std::cout << "; varChooser=" << parameters[1];
-    std::cout << "; valChooser=" << parameters[2];
-    if (timeLimit < INT_MAX) std::cout << "; timeLimit=" << parameters[3];
-    if ((parameters[1] == "random" || parameters[2] == "random")) std::cout << "; randomSeed=" << std::to_string(randomSeed);
-    std::cout << "; nbSolutions=" << parameters[5];
+    std::cout << "Launch solve with";
+    std::cout << " nodeSolveMethod=" << parameters[1];
+    std::cout << "; varChooser=" << parameters[2];
+    std::cout << "; valChooser=" << parameters[3];
+    if (timeLimit < INT_MAX) std::cout << "; timeLimit=" << parameters[4];
+    if ((parameters[2] == "random" || parameters[3] == "random")) std::cout << "; randomSeed=" << std::to_string(randomSeed);
+    std::cout << "; nbSolutions=" << parameters[6];
     std::cout << "; verbosity=" << std::to_string(verbosity);
     std::cout << ":"  << std::endl;
 }
 
 void Solver::displayFinalInformation() const{
-    if (foundSolution) std::cout << std::to_string(nbNodesExplored) + " nodes explored - Found " << solutions.size() << " solution(s)" << std::endl;
+    if (hasFoundSolution()) std::cout << std::to_string(nbNodesExplored) + " nodes explored - Found " << solutions.size() << " solution(s)" << std::endl;
     else if (solve_time >= timeLimit) std::cout << std::to_string(nbNodesExplored) + " nodes explored - no solution found" << std::endl;
     else std::cout << "infeasible" << std::endl;
     if (state == State::Stop)

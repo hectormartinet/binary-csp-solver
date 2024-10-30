@@ -28,8 +28,7 @@ int main(int argc, char** argv) {
 
     solver.checkFeasibility(csp);
     if (solver.hasFoundSolution()) solver.checkFeasibility(csp);
-    if (stoi(_checkIfFoundSolution)) assert(solver.hasFoundSolution());
-    if (stoi(_checkSolveAtRoot)) assert(solver.getNbNodesExplored() == 0);
-    // if (solver.hasFoundSolution()) solver.displaySolution();
+    if (std::stoi(_checkIfFoundSolution)) assert(solver.hasFoundSolution());
+    if (std::stoi(_checkSolveAtRoot)) assert(solver.getNbNodesExplored() == 0);
     return 0;
 }

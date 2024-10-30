@@ -49,7 +49,12 @@ void Solver::initAllDifferent() {
 }
 
 void Solver::checkFeasibility(CSP _problem) {
-    if (foundSolution) assert(_problem.feasible(setVariables));
+    if (foundSolution) {
+        for (const auto &sol : solutions) {
+            assert(sol.size() == problem.nbVar());
+            assert(_problem.feasible(sol));
+        }
+    }
 }
 
 void Solver::removeConstraintValuePair(int x, int y, int a, int b) {
@@ -164,7 +169,6 @@ bool Solver::AC4() {
         }
         for (auto [x,a] : toPropagate) {
             removeConstraintValuePair(x,y,a,b);
-            // Lazy evaluation
             if (problem.getConstraints().at(x).at(y)->getSupportSize(a) == 0 && problem.getDomain(x).count(a)) {
                 if (removeVarValue(x,a)) addAC4List(x,a);
                 else return false;
@@ -200,7 +204,7 @@ void Solver::unsetVar(int var) {
     unsetVariables.emplace(var);
 }
 
-void Solver::flashback() {
+void Solver::backtrack() {
     AC4List.clear();
     lazyPropagateList.clear();
     for (auto [y,b] : deltaDomains.back()) {
@@ -221,7 +225,9 @@ void Solver::flashback() {
 
 void Solver::preprocess() {
     if (solveMethod == SolveMethod::AC4) {
+        std::cout << "Extensify constraints for AC4...";
         problem.extensify();
+        std::cout << "Done." << std::endl;
     }
 }
 
@@ -355,14 +361,14 @@ bool Solver::recursiveSolve() {
         branchOnVar(var, value);
         if (solveMethod == SolveMethod::AC4) initAC4Solve(var, value, values);
         if (!checkConsistent(var, value)) {
-            flashback();
+            backtrack();
             continue;
         }
         if (solveMethod == SolveMethod::AC4) assert(checkAC());
         
         if (recursiveSolve()) return true;
         if (state == State::Stop) return false;
-        flashback();
+        backtrack();
     }
     unbranchOnVar(var, values);
 
@@ -402,7 +408,7 @@ void Solver::displaySolveInformation() const{
 }
 
 void Solver::displayFinalInformation() const{
-    if (foundSolution) std::cout << std::to_string(nbNodesExplored) + " nodes explored - Found " << solutions.size() << " solution" << std::endl;
+    if (foundSolution) std::cout << std::to_string(nbNodesExplored) + " nodes explored - Found " << solutions.size() << " solution(s)" << std::endl;
     else if (solve_time >= timeLimit) std::cout << std::to_string(nbNodesExplored) + " nodes explored - no solution found" << std::endl;
     else std::cout << "infeasible" << std::endl;
     if (state == State::Stop)

@@ -4,6 +4,7 @@
 Solver::Solver(CSP _problem, const std::vector<std::string> _parameters, bool _verbosity) : problem(_problem), parameters(_parameters), verbosity(_verbosity) {
     unsetVariables = problem.getVariables();
     translateParameters(parameters);
+    initAllDifferent();
 }
 
 void Solver::translateParameters(const std::vector<std::string> _parameters){
@@ -32,7 +33,19 @@ void Solver::translateParameters(const std::vector<std::string> _parameters){
     else randomSeed = std::stoul(parameters[4]);
 
     if (parameters[5] == "all") nbSolutions = INT_MAX;
-    else nbSolutions = std::stoi(parameters[5]);
+    else nbSolutions = std::stoul(parameters[5]);
+}
+
+void Solver::initAllDifferent() {
+    for (int var:problem.getVariables()) {
+        varToAllDifferent.emplace(var,std::vector<AllDifferentFamily*>());
+    }
+    for (const auto& family : problem.getAllDifferentFamilies()) {
+        allDifferentFamilies.push_back(AllDifferentFamily(family,problem.getDomains()));
+        for (int var:family) {
+            varToAllDifferent.at(var).push_back(&allDifferentFamilies.back());
+        }
+    }
 }
 
 void Solver::checkFeasibility(CSP _problem) {
@@ -397,7 +410,7 @@ void Solver::displayFinalInformation() const{
 }
 
 void Solver::displaySolution() const{
-    for (int i = 0; i < (int) solutions.size(); i++) {
+    for (unsigned int i = 0; i < solutions.size(); i++) {
         std::cout << std::endl;
         std::cout << "SOLUTION " << i + 1 << std::endl;
         for (auto [var,value] : solutions[i]) {

@@ -4,6 +4,7 @@
 #include "csp.h"
 #include "variablechooser.h"
 #include "valuechooser.h"
+#include "alldifferentfamily.h"
 
 #include <memory>  
 
@@ -43,6 +44,9 @@ private:
     std::unordered_set<std::pair<int,int>,PairHash> AC4List;
     std::unordered_set<std::pair<int,int>,PairHash> lazyPropagateList;
 
+    std::vector<AllDifferentFamily> allDifferentFamilies;
+    std::unordered_map<int,std::vector<AllDifferentFamily*>> varToAllDifferent; 
+
     State state = State::Preprocess;
     unsigned int nbNodesExplored=0;
     int bestDepth=0;
@@ -53,6 +57,7 @@ private:
 public:
     Solver(CSP _problem, const std::vector<std::string> _parameters, bool _verbosity);
     void translateParameters(const std::vector<std::string> _parameters);
+    void initAllDifferent();
 
     bool feasible() const{return problem.feasible(setVariables);}
     bool feasible(int var, int value) const {return problem.feasible(setVariables,var,value);}

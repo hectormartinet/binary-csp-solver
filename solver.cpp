@@ -154,10 +154,13 @@ bool Solver::fixVariables(const std::vector<std::pair<int,int>>& varsToFix) {
         if (setVariables.count(var)) continue;
         for (int valToRemove : problem.getDomainCopy(var)) {
             if (valToRemove != value) {
-                if (solveMethod == SolveMethod::AC4) {
-                    AC4List.emplace(var, valToRemove);
-                }
+                if (solveMethod == SolveMethod::AC4) addAC4List(var, valToRemove);
                 if (!removeVarValue(var, valToRemove)) return false;
+            }
+            if (solveMethod == SolveMethod::AC3) {
+                for (const auto& [y,Cxy] : problem.getConstraints().at(var)) {
+                    if (unsetVariables.count(y)) addAC3List(y, var);
+                }
             }
         }
     }

@@ -8,6 +8,7 @@
 #include <functional>
 #include <stdexcept>
 #include <iostream>
+#include <optional>
 
 class Constraint {
 
@@ -34,7 +35,7 @@ public:
     virtual std::vector<std::pair<int,int>> getUselessPairs(const std::unordered_set<int>&) const=0;
 
     // return values b in Dy such that x=a => y!=b
-    virtual std::vector<int> getForbiddenValues(int a, const std::unordered_set<int>& Dy)=0;
+    virtual std::vector<int> getForbiddenValues(int a, const std::unordered_set<int>& Dy) const=0;
 
     virtual const std::unordered_set<int>& getSupport(int a) const=0;
     virtual size_t getSupportSize(int value) const=0;
@@ -62,7 +63,7 @@ public:
 
     std::vector<std::pair<int,int>> getUselessPairs(const std::unordered_set<int>& Dx) const;
 
-    std::vector<int> getForbiddenValues(int a, const std::unordered_set<int>& Dy);
+    std::vector<int> getForbiddenValues(int a, const std::unordered_set<int>& Dy) const;
 
     const std::unordered_set<int>& getSupport(int a) const {return list.at(a);}
     size_t getSupportSize(int value) const {return list.count(value) ? list.at(value).size():0;}
@@ -75,9 +76,10 @@ class IntensiveConstraint: public Constraint {
 
 protected:
     std::function<bool(int,int)> feasibleFunction;
+    std::optional<std::function<std::vector<int>(int)>> forbiddenValuesFunction;
 
 public:
-    IntensiveConstraint(int _x, int _y, std::function<bool(int,int)> _feasibleFunction) : Constraint(_x, _y), feasibleFunction{_feasibleFunction} {}
+    IntensiveConstraint(int _x, int _y, std::function<bool(int,int)> _feasibleFunction, std::optional<std::function<std::vector<int>(int)>> _forbiddenValuesFunction) : Constraint(_x, _y), feasibleFunction{_feasibleFunction}, forbiddenValuesFunction(_forbiddenValuesFunction) {}
 
     std::unique_ptr<Constraint> clone() {return std::unique_ptr<IntensiveConstraint>(new IntensiveConstraint{*this});}
     std::unique_ptr<Constraint> extensify(const std::unordered_set<int>& Dx, const std::unordered_set<int>& Dy);
@@ -90,7 +92,9 @@ public:
 
     std::vector<std::pair<int,int>> getUselessPairs(const std::unordered_set<int>&) const{return std::vector<std::pair<int,int>>();};
 
-    std::vector<int> getForbiddenValues(int a, const std::unordered_set<int>& Dy);
+    std::vector<int> getForbiddenValues(int a, const std::unordered_set<int>& Dy) const;
+    std::vector<int> getForbiddenValuesDefault(int a, const std::unordered_set<int>& Dy) const;
+    std::vector<int> getForbiddenValuesSmart(int a, const std::unordered_set<int>& Dy) const;
 
     const std::unordered_set<int>& getSupport(int) const{throw std::logic_error("Not implemented lol");};
     size_t getSupportSize(int) const{throw std::logic_error("Not implemented lol");};
@@ -115,7 +119,7 @@ public:
 
     std::vector<std::pair<int,int>> getUselessPairs(const std::unordered_set<int>&) const{return std::vector<std::pair<int,int>>();};
 
-    std::vector<int> getForbiddenValues(int a, const std::unordered_set<int>& Dy);
+    std::vector<int> getForbiddenValues(int a, const std::unordered_set<int>& Dy) const;
 
     const std::unordered_set<int>& getSupport(int) const{throw std::logic_error("Not implemented lol");};
     size_t getSupportSize(int) const{throw std::logic_error("Not implemented lol");};

@@ -76,19 +76,20 @@ void CSP::addConstraint(int x, int y, const std::function<bool(int,int)>& validP
     }
 }
 
-void CSP::addIntensiveConstraint(int x, int y, const std::function<bool(int,int)>& validPair, bool symetricFunction) {
+void CSP::addIntensiveConstraint(int x, int y, const std::function<bool(int,int)>& validPair, bool symetricFunction, const std::optional<std::function<std::vector<int>(int)>>& forbiddenValuesFunction) {
     assert(x!=y);
     assert(constraints.count(x));
+    assert(symetricFunction || !forbiddenValuesFunction.has_value());
     if (constraints.at(x).count(y)) return;
-    constraints.at(x).emplace(y,std::make_unique<IntensiveConstraint>(x,y,validPair));
+    constraints.at(x).emplace(y,std::make_unique<IntensiveConstraint>(x,y,validPair,forbiddenValuesFunction));
 
     // add the symmetric constraint
     assert(constraints.count(y));
     assert(constraints.at(y).count(x) == 0);
     if (symetricFunction)
-        constraints.at(y).emplace(x,std::make_unique<IntensiveConstraint>(y,x,validPair));
+        constraints.at(y).emplace(x,std::make_unique<IntensiveConstraint>(y,x,validPair,forbiddenValuesFunction));
     else 
-        constraints.at(y).emplace(x,std::make_unique<IntensiveConstraint>(y,x,[validPair] (int b, int a){return validPair(a,b);}));
+        constraints.at(y).emplace(x,std::make_unique<IntensiveConstraint>(y,x,[validPair] (int b, int a){return validPair(a,b);},forbiddenValuesFunction));
     
     nConstraints++;
 }
@@ -171,7 +172,11 @@ void CSP::init(const QueenProblem& problem){
     // Constraints
     for (int x=0; x<n; x++) {
         for (int y=x+1; y<n; y++) {
-            addIntensiveConstraint(x,y, [x, y](int a, int b) {return a!=b && std::abs(a-b)!=std::abs(x-y);}, true);
+            addIntensiveConstraint(x,y, 
+                    [x, y](int a, int b) {return a!=b && std::abs(a-b)!=std::abs(x-y);},
+                    true,
+                    [x, y](int a) {return std::vector<int>{a,a+x-y,a-x+y};}
+            );
         }
     }
 
@@ -196,7 +201,11 @@ void CSP::init(const BlockedQueenProblem& problem){
     // Constraints
     for (int x=0; x<n; x++) {
         for (int y=x+1; y<n; y++) {
-            addIntensiveConstraint(x,y,[x,y](int a, int b) {return a!=b && std::abs(a-b)!=std::abs(x-y);}, true);
+            addIntensiveConstraint(x,y, 
+                    [x, y](int a, int b) {return a!=b && std::abs(a-b)!=std::abs(x-y);},
+                    true,
+                    [x, y](int a) {return std::vector<int>{a,a+x-y,a-x+y};}
+            );        
         }
     }
 

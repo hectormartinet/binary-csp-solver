@@ -7,6 +7,7 @@
 #include <functional>
 #include <memory>
 #include <thread>
+#include <optional>
 #include "constraint.h"
 #include "problemreader.h"
 #include <random>
@@ -43,8 +44,8 @@ public:
     void addConstraint(int x, int y, const std::function<bool(int,int)>& validPair);
     void addConstraint(std::pair<int,int> pair) {return addConstraint(pair.first, pair.second);}
     void addConstraint(std::pair<int,int> pair, const std::function<bool(int,int)>& validPair) {return addConstraint(pair.first, pair.second, validPair);}
-    void addIntensiveConstraint(int x, int y, const std::function<bool(int,int)>& validPair, bool symetricFunction=false);
-    void addIntensiveConstraint(std::pair<int,int> pair, const std::function<bool(int,int)>& validPair, bool symetricFunction=false) {return addIntensiveConstraint(pair.first, pair.second, validPair, symetricFunction);};
+    void addIntensiveConstraint(int x, int y, const std::function<bool(int,int)>& validPair, bool symetricFunction=false, const std::optional<std::function<std::vector<int>(int)>>& forbiddenValuesFunction={});
+    void addIntensiveConstraint(std::pair<int,int> pair, const std::function<bool(int,int)>& validPair, bool symetricFunction=false, const std::optional<std::function<std::vector<int>(int)>>& forbiddenValuesFunction={}) {return addIntensiveConstraint(pair.first, pair.second, validPair, symetricFunction, forbiddenValuesFunction);};
     void addDifferenceConstraint(int x, int y);
     void addDifferenceConstraint(std::pair<int,int> pair) {return addDifferenceConstraint(pair.first, pair.second);};
     void addAllDifferentConstraint(const std::vector<int>& vars);

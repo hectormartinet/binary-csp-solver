@@ -1,4 +1,5 @@
 #include<iostream>
+#include <cassert>
 
 #include "constraint.h"
 
@@ -32,7 +33,7 @@ std::vector<std::pair<int,int>> ExtensiveConstraint::getUselessPairs(const std::
     return uselessPairs;
 }
 
-std::vector<int> ExtensiveConstraint::getForbiddenValues(int a, const std::unordered_set<int>& Dy) {
+std::vector<int> ExtensiveConstraint::getForbiddenValues(int a, const std::unordered_set<int>& Dy) const{
     std::vector<int> forbiddenValues;
     for (int b : Dy) {
         if (!feasible(a,b)) forbiddenValues.push_back(b);
@@ -60,10 +61,24 @@ std::unique_ptr<Constraint> IntensiveConstraint::extensify(const std::unordered_
     return std::unique_ptr<ExtensiveConstraint> (constraint);
 }
 
-std::vector<int> IntensiveConstraint::getForbiddenValues(int a, const std::unordered_set<int>& Dy) {
+std::vector<int> IntensiveConstraint::getForbiddenValues(int a, const std::unordered_set<int>& Dy) const{
+    if (forbiddenValuesFunction.has_value()) return getForbiddenValuesSmart(a, Dy);
+    return getForbiddenValuesDefault(a, Dy);
+}
+
+std::vector<int> IntensiveConstraint::getForbiddenValuesDefault(int a, const std::unordered_set<int>& Dy) const{
     std::vector<int> forbiddenValues;
     for (int b : Dy) {
         if (!feasible(a,b)) forbiddenValues.push_back(b);
+    }
+    return forbiddenValues;
+}
+
+std::vector<int> IntensiveConstraint::getForbiddenValuesSmart(int a, const std::unordered_set<int>& Dy) const{
+    assert(forbiddenValuesFunction.has_value());
+    std::vector<int> forbiddenValues;
+    for (int b : (*forbiddenValuesFunction)(a)) {
+        if (Dy.count(b)) forbiddenValues.push_back(b);
     }
     return forbiddenValues;
 }
@@ -79,7 +94,7 @@ std::unique_ptr<Constraint> DifferenceConstraint::extensify(const std::unordered
     return std::unique_ptr<ExtensiveConstraint> (constraint);
 }
 
-std::vector<int> DifferenceConstraint::getForbiddenValues(int a, const std::unordered_set<int>& Dy) {
+std::vector<int> DifferenceConstraint::getForbiddenValues(int a, const std::unordered_set<int>& Dy) const{
     if (Dy.count(a)) return {a};
     return {};
 }

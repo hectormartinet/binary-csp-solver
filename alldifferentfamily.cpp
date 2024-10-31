@@ -51,14 +51,14 @@ bool AllDifferentFamily::isCoherent(const std::unordered_map<int,std::unordered_
     unsigned int linesCheckSum = 0;
     unsigned int columnsCheckSum = 0;
     for (int var : variables) {
-        linesCheckSum += domains.at(var).size();
+        linesCheckSum += (unsigned int)(domains.at(var).size());
         for (int val : domains.at(var)) {
             if (!valToVar.at(val).count(var)) return false;
         }
     }
 
     for (const auto& [val, varSet] : valToVar) {
-        columnsCheckSum += varSet.size();
+        columnsCheckSum += (unsigned int)(varSet.size());
     }
 
     return linesCheckSum==columnsCheckSum;

@@ -20,9 +20,12 @@ CSP::CSP(const CSP& csp) {
 }
 
 void CSP::addVariable(int var) {
+    assert(variables.count(var) == 0); 
+    assert(domains.count(var) == 0);
+    assert(constraints.count(var) == 0);
     variables.emplace(var);
-    if (domains.count(var) == 0)
-        domains.emplace(var,std::unordered_set<int>());
+    domains.emplace(var,std::unordered_set<int>());
+    constraints.emplace(var,std::unordered_map<int,std::unique_ptr<Constraint>>());
 }
 
 void CSP::addVariableValue(int var, int value) {
@@ -50,18 +53,16 @@ void CSP::fixValue(int var, int value) {
 
 void CSP::addConstraint(int x, int y) {
     assert(x!=y);
-    if (constraints.count(x) == 0)
-        constraints.emplace(x,std::unordered_map<int,std::unique_ptr<Constraint>>());
-    if (constraints.at(x).count(y) == 0) {
-        constraints.at(x).emplace(y,std::make_unique<ExtensiveConstraint>(x,y));
-        nConstraints++;
-    }
+    assert(constraints.count(x));
+    if (constraints.at(x).count(y)) return;
+    constraints.at(x).emplace(y,std::make_unique<ExtensiveConstraint>(x,y));
     
     // add the symmetric constraint
-    if (constraints.count(y) == 0)
-        constraints.emplace(y,std::unordered_map<int,std::unique_ptr<Constraint>>());
-    if (constraints.at(y).count(x) == 0)
-        constraints.at(y).emplace(x,std::make_unique<ExtensiveConstraint>(y,x));
+    assert(constraints.count(y));
+    assert(constraints.at(y).count(x) == 0);
+    constraints.at(y).emplace(x,std::make_unique<ExtensiveConstraint>(y,x));
+    
+    nConstraints++;
 }
 
 void CSP::addConstraint(int x, int y, const std::function<bool(int,int)>& validPair) {
@@ -77,22 +78,32 @@ void CSP::addConstraint(int x, int y, const std::function<bool(int,int)>& validP
 
 void CSP::addIntensiveConstraint(int x, int y, const std::function<bool(int,int)>& validPair, bool symetricFunction) {
     assert(x!=y);
-    if (constraints.count(x) == 0)
-        constraints.emplace(x,std::unordered_map<int,std::unique_ptr<Constraint>>());
-    if (constraints.at(x).count(y) == 0) {
-        constraints.at(x).emplace(y,std::make_unique<IntensiveConstraint>(x,y,validPair));
-        nConstraints++;
-    }
+    assert(constraints.count(x));
+    if (constraints.at(x).count(y)) return;
+    constraints.at(x).emplace(y,std::make_unique<IntensiveConstraint>(x,y,validPair));
 
     // add the symmetric constraint
-    if (constraints.count(y) == 0)
-        constraints.emplace(y,std::unordered_map<int,std::unique_ptr<Constraint>>());
-    if (constraints.at(y).count(x) == 0) {
-        if (symetricFunction)
-            constraints.at(y).emplace(x,std::make_unique<IntensiveConstraint>(y,x,validPair));
-        else 
-            constraints.at(y).emplace(x,std::make_unique<IntensiveConstraint>(y,x,[validPair] (int b, int a){return validPair(a,b);}));
-    }
+    assert(constraints.count(y));
+    assert(constraints.at(y).count(x) == 0);
+    if (symetricFunction)
+        constraints.at(y).emplace(x,std::make_unique<IntensiveConstraint>(y,x,validPair));
+    else 
+        constraints.at(y).emplace(x,std::make_unique<IntensiveConstraint>(y,x,[validPair] (int b, int a){return validPair(a,b);}));
+    
+    nConstraints++;
+}
+
+void CSP::addDifferenceConstraint(int x, int y) {
+    assert(x!=y);
+    assert(constraints.count(x));
+    if (constraints.at(x).count(y)) return;
+    constraints.at(x).emplace(y, std::make_unique<DifferenceConstraint>(x,y));
+
+    assert(constraints.count(y));
+    assert(constraints.at(y).count(x) == 0);
+    constraints.at(y).emplace(x, std::make_unique<DifferenceConstraint>(y,x));
+
+    nConstraints++;
 }
 
 void CSP::addConstraintValuePair(int x, int y, int a, int b) {
@@ -106,10 +117,9 @@ void CSP::removeConstraintValuePair(int x, int y, int a, int b) {
 }
 
 void CSP::addAllDifferentConstraint(const std::vector<int>& vars) {
-    std::function<bool(int,int)> lambdaDifferent = [](int a, int b) {return a != b;};
     for (unsigned int i=0; i<vars.size(); i++) {
         for (unsigned int j=i+1; j<vars.size(); j++) {
-            addConstraint(vars[i], vars[j], lambdaDifferent);
+            addDifferenceConstraint(vars[i], vars[j]);
         }
     }
     addAllDifferentFamily(vars);
@@ -245,11 +255,9 @@ void CSP::init(const ColorProblem& problem) {
         addVariableRange(var, 0, nbColors);
     }
 
-    auto lambdaDifferent = [](int a,int b) {return a != b;};
-
     //Constraints
     for (std::pair<int,int> edge : problem.edges) {
-        addIntensiveConstraint(edge, lambdaDifferent, true);
+        addDifferenceConstraint(edge);
     }
 }
 

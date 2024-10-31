@@ -45,6 +45,8 @@ public:
     void addConstraint(std::pair<int,int> pair, const std::function<bool(int,int)>& validPair) {return addConstraint(pair.first, pair.second, validPair);}
     void addIntensiveConstraint(int x, int y, const std::function<bool(int,int)>& validPair, bool symetricFunction=false);
     void addIntensiveConstraint(std::pair<int,int> pair, const std::function<bool(int,int)>& validPair, bool symetricFunction=false) {return addIntensiveConstraint(pair.first, pair.second, validPair, symetricFunction);};
+    void addDifferenceConstraint(int x, int y);
+    void addDifferenceConstraint(std::pair<int,int> pair) {return addDifferenceConstraint(pair.first, pair.second);};
     void addAllDifferentConstraint(const std::vector<int>& vars);
     void addAllDifferentFamily(const std::vector<int>& vars) {allDifferentFamilies.push_back(vars);}
 

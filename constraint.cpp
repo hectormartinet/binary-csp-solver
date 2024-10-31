@@ -52,3 +52,14 @@ std::unique_ptr<Constraint> IntensiveConstraint::extensify(const std::unordered_
     }
     return std::unique_ptr<ExtensiveConstraint> (constraint);
 }
+
+std::unique_ptr<Constraint> DifferenceConstraint::extensify(const std::unordered_set<int>& Dx, const std::unordered_set<int>& Dy) {
+    ExtensiveConstraint* constraint = new ExtensiveConstraint(x,y);
+    for (int a : Dx) {
+        for (int b : Dy) {
+            if (a!=b) constraint->addPair(a,b);
+        }
+    }
+    return std::unique_ptr<ExtensiveConstraint> (constraint);
+}
+

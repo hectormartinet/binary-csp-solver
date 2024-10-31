@@ -14,7 +14,7 @@ class Constraint {
 public:
     int x;
     int y;
-    bool isExtensive=false;
+    const bool isExtensive=false;
 
     Constraint(){}
     Constraint(int _x, int _y, bool _isExtensive=false): x{_x}, y{_y}, isExtensive{_isExtensive} {}
@@ -89,6 +89,29 @@ public:
     size_t getSupportSize(int) const{throw std::logic_error("Not implemented lol");};
 
     void display() const {std::cout << x << "," << y << ": Intensive constraint"<<std::endl;}
+};
+
+
+class DifferenceConstraint: public Constraint {
+
+public:
+    DifferenceConstraint(int _x, int _y) : Constraint(_x, _y) {}
+
+    std::unique_ptr<Constraint> clone() {return std::unique_ptr<DifferenceConstraint>(new DifferenceConstraint{*this});}
+    std::unique_ptr<Constraint> extensify(const std::unordered_set<int>& Dx, const std::unordered_set<int>& Dy);
+
+    void addPair(int, int) {throw std::logic_error("Cannot add pair to intensive constraint");};
+    void removePair(int, int){throw std::logic_error("Cannot remove pair from intensive constraint");};
+
+    bool feasible(int a, int b) const{return a!=b;}
+    bool feasible(const std::unordered_map<int,int>& partSol) const{return feasible(partSol.at(x),partSol.at(y));}
+
+    std::vector<std::pair<int,int>> getUselessPairs(const std::unordered_set<int>&) const{return std::vector<std::pair<int,int>>();};
+
+    const std::unordered_set<int>& getSupport(int) const{throw std::logic_error("Not implemented lol");};
+    size_t getSupportSize(int) const{throw std::logic_error("Not implemented lol");};
+
+    void display() const {std::cout << x << "," << y << ": Difference constraint"<<std::endl;}
 };
 
 #endif

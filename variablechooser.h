@@ -26,16 +26,44 @@ protected:
 class SmallestDomainVariableChooser : public VariableChooser {
 protected:
     int choose(const CSP& problem, const std::unordered_set<int>& variables) const{
-        int best_var = 0;
-        size_t best_size = INT_MAX;
+        int bestVar = 0;
+        size_t bestSize = INT_MAX;
         for (int var : variables) {
             size_t size = problem.getDomainSize(var);
-            if (size < best_size) {
-                best_size = size;
-                best_var = var;
+            if (size < bestSize) {
+                bestSize = size;
+                bestVar = var;
             } 
         }
-        return best_var;
+        return bestVar;
+    }
+};
+
+class MaxConstraintVariableChooser : public VariableChooser {
+protected:
+    int choose(const CSP& problem, const std::unordered_set<int>& variables) const{
+        std::unordered_map<int, int> countVariables;
+        for (const auto &x : variables) {
+            if (countVariables.count(x) == 0) countVariables.emplace(x, 0);
+            for (const auto&[y, Cxy] : problem.getConstraints().at(x)) {
+                if (x < y && variables.count(y)) {
+                    countVariables.at(x)++;
+                    if (countVariables.count(y) == 0)
+                        countVariables.emplace(y, 1);
+                    else
+                        countVariables.at(y)++;
+                }
+            }
+        }
+        int bestVar = -1;
+        int nbAssocConstraints = -1;
+        for (const auto& [var,value] : countVariables) {
+            if (value > nbAssocConstraints) {
+                nbAssocConstraints = value;
+                bestVar = var;
+            }
+        }
+        return bestVar;
     }
 };
 

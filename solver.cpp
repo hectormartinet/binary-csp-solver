@@ -7,33 +7,89 @@ Solver::Solver(CSP _problem, const std::vector<std::string> _parameters, bool _v
     initAllDifferent();
 }
 
-void Solver::translateParameters(const std::vector<std::string> _parameters){
-    assert(_parameters.size() == 6);
-    std::string _solveMethod = _parameters[0];
-    if (_solveMethod == "AC4") solveMethod = SolveMethod::AC4;
-    else if (_solveMethod == "FC") solveMethod = SolveMethod::ForwardChecking;
-    else if (_solveMethod == "LP") solveMethod = SolveMethod::LazyPropagate;
-    else throw std::logic_error("Wrong solve method");
+Solver::Solver(CSP _problem) : problem(_problem) {
+    unsetVariables = problem.getVariables();
+    setDefaultParameters();
+}
 
-    std::string _variableChooser = _parameters[1];
+void Solver::setDefaultParameters() {
+    rootSolveMethod = SolveMethod::LazyPropagate;
+    nodeSolveMethod = SolveMethod::LazyPropagate;
+    varChooser = std::make_unique<SmallestDomainVariableChooser>();
+    valueChooser = std::make_unique<CopyValueChooser>();
+    randomSeed = (unsigned int)(time(NULL));
+    parameters = {"LP", "LP", "smallest", "copy", " ", std::to_string(randomSeed), "1"};
+}
+
+void Solver::setRootSolveMethod(const std::string _rootSolveMethod) {
+    if (_rootSolveMethod == "AC4") rootSolveMethod = SolveMethod::AC4;
+    else if (_rootSolveMethod == "AC3") rootSolveMethod = SolveMethod::AC3;
+    else if (_rootSolveMethod == "FC") rootSolveMethod = SolveMethod::ForwardChecking;
+    else if (_rootSolveMethod == "LP") rootSolveMethod = SolveMethod::LazyPropagate;
+    else throw std::logic_error("Wrong root solve method");
+    parameters[0] = _rootSolveMethod;
+}
+
+void Solver::setNodeSolveMethod(const std::string _nodeSolveMethod) {
+    if (_nodeSolveMethod == "AC4") nodeSolveMethod = SolveMethod::AC4;
+    else if (_nodeSolveMethod == "AC3") nodeSolveMethod = SolveMethod::AC3;
+    else if (_nodeSolveMethod == "FC") nodeSolveMethod = SolveMethod::ForwardChecking;
+    else if (_nodeSolveMethod == "LP") nodeSolveMethod = SolveMethod::LazyPropagate;
+    else throw std::logic_error("Wrong node solve method");
+    parameters[1] = _nodeSolveMethod;
+}
+
+void Solver::setVarChooser(const std::string _variableChooser) {
     if (_variableChooser == "smallest") varChooser = std::make_unique<SmallestDomainVariableChooser>();
     else if (_variableChooser == "random") varChooser = std::make_unique<RandomVariableChooser>();
+    else if (_variableChooser == "max") varChooser = std::make_unique<MaxConstraintVariableChooser>();
     else throw std::logic_error("Wrong variable chooser");
+    parameters[2] = _variableChooser;
+}
 
-    std::string _valueChooser = _parameters[2];
+void Solver::setValChooser(const std::string _valueChooser) {
     if (_valueChooser == "copy") valueChooser = std::make_unique<CopyValueChooser>();
     else if (_valueChooser == "smallest") valueChooser = std::make_unique<SmallestValueChooser>();
     else if (_valueChooser == "random") valueChooser = std::make_unique<RandomValueChooser>();
     else throw std::logic_error("Wrong value chooser");
+    parameters[3] = _valueChooser;
+}
 
-    timeLimit = std::stoi(parameters[3]);
-    if (timeLimit == -1) timeLimit=INT_MAX;
+void Solver::setValLambdaChooser(const std::function<bool(int,int)> lambda) {
+    valueChooser = std::make_unique<LambdaValueChooser>(lambda);
+    parameters[3] = "lambda";
+}
 
-    if (parameters[4] == "" || std::stoi(parameters[4]) < 0) randomSeed = (unsigned int)(time(NULL)) ;
-    else randomSeed = std::stoul(parameters[4]);
+void Solver::setTimeLimit(const int _timeLimit) {
+    if (_timeLimit>=0) {
+        timeLimit = _timeLimit;
+        parameters[4] = std::to_string(_timeLimit);
+    }
+}
 
-    if (parameters[5] == "all") nbSolutions = INT_MAX;
-    else nbSolutions = std::stoul(parameters[5]);
+void Solver::setRandomSeed(const unsigned int _randomSeed) {
+    randomSeed =_randomSeed;
+    parameters[5] = std::to_string(_randomSeed);
+}
+
+void Solver::setNbSolutions(const unsigned int _nbSolutions) {
+    nbSolutions = _nbSolutions; 
+    parameters[6] = (_nbSolutions == INT_MAX) ? "all" : std::to_string(_nbSolutions);
+}
+
+void Solver::translateParameters(const std::vector<std::string> _parameters){
+    assert(_parameters.size() == 7);
+    setRootSolveMethod(_parameters[0]);
+    setNodeSolveMethod(_parameters[1]);
+    setVarChooser(_parameters[2]);
+    setValChooser(_parameters[3]);
+    setTimeLimit(std::stoi(parameters[4]));
+
+    if (parameters[5] == "" || std::stoi(parameters[5]) < 0) setRandomSeed((unsigned int)(time(NULL))) ;
+    else setRandomSeed(std::stoul(parameters[5]));
+
+    unsigned int _nbSolutions = (parameters[6] == "all") ? INT_MAX : std::stoul(parameters[6]);
+    setNbSolutions(_nbSolutions);
 }
 
 void Solver::initAllDifferent() {
@@ -51,11 +107,9 @@ void Solver::initAllDifferent() {
 }
 
 void Solver::checkFeasibility(CSP _problem) {
-    if (foundSolution) {
-        for (const auto &sol : solutions) {
-            assert(sol.size() == problem.nbVar());
-            assert(_problem.feasible(sol));
-        }
+    for (const auto &sol : solutions) {
+        assert(sol.size() == problem.nbVar());
+        assert(_problem.feasible(sol));
     }
 }
 
@@ -197,6 +251,57 @@ bool Solver::initAC4Root() {
     return true;
 }
 
+void Solver::removeAC3List(int x, int y) {
+    AC3List.erase(std::make_pair(x,y));
+    int onlyVal = *problem.getDomain(y).begin();
+    if (problem.getDomainSize(y) == 1) setVar(y,onlyVal);
+}
+
+bool Solver::AC3() {
+    while (!AC3List.empty()) {
+        auto [x,y] = *AC3List.begin();
+        removeAC3List(x,y);
+        std::vector<int> domain;
+        domain.insert(domain.end(), problem.getDomain(x).begin(), problem.getDomain(x).end());
+        for (int v : domain) {
+            bool hasSupport = false;
+            for (int w : problem.getDomain(y)) {
+                if (problem.getConstraints().at(x).at(y)->feasible(v,w)) {
+                    hasSupport = true;
+                    break;
+                }
+            }
+            if (!hasSupport) {
+                if (!removeVarValue(x, v)) return false;
+                for (const auto& [z, Cxz] : problem.getConstraints().at(x)) {
+                    if (unsetVariables.count(z) && z != y) addAC3List(z, x);
+                }
+            }
+        }
+    }
+    return true;
+}
+
+bool Solver::initAC3Root() {
+    assert(solveMethod == SolveMethod::AC3);
+    assert(state == State::Preprocess);
+    for (const auto& [x,Cx] : problem.getConstraints()) {
+        for (const auto& [y,Cxy] : Cx) {
+            addAC3List(x, y);
+        }
+    }
+    return true;
+}
+
+bool Solver::initAC3Solve(int var) {
+    assert(solveMethod == SolveMethod::AC3);
+    assert(state == State::Solve);
+    for (const auto& [y,Cxy] : problem.getConstraints().at(var)) {
+        if (unsetVariables.count(y)) addAC3List(y, var);
+    }
+    return true;
+}
+
 bool Solver::initAC4Solve(int var, int value, std::vector<int> oldDomain) {
     assert(state != State::Preprocess);
     for (int d : oldDomain) {
@@ -262,6 +367,7 @@ void Solver::unsetVar(int var) {
 
 void Solver::backtrack() {
     AC4List.clear();
+    AC3List.clear();
     lazyPropagateList.clear();
     for (auto [y,b] : deltaDomains.back()) {
         addVarValue(y, b);
@@ -280,8 +386,9 @@ void Solver::backtrack() {
 }
 
 void Solver::preprocess() {
+    std::cout << "Launch presolve with rootSolveMethod=" << parameters[0] << ":" << std::endl;
     if (solveMethod == SolveMethod::AC4) {
-        std::cout << "Extensify constraints for AC4...";
+        std::cout << "Extensify constraints for AC4..." << std::endl;
         problem.extensify();
         std::cout << "Done." << std::endl;
     }
@@ -298,6 +405,10 @@ bool Solver::presolve() {
         if(!consistent) return false;
         assert(checkAC());
     }
+    if (solveMethod == SolveMethod::AC3) {
+        bool consistent = initAC3Root() && AC3();
+        if (!consistent) return false;
+    }
     for (int var: problem.getVariables()) {
         switch (problem.getDomainSize(var))
         {
@@ -307,7 +418,6 @@ bool Solver::presolve() {
         {
             int value = *problem.getDomain(var).begin();
             setVar(var, value);
-            // if (!feasible(var,value)) return false;
             switch (solveMethod) 
             {
             case SolveMethod::ForwardChecking:
@@ -351,6 +461,11 @@ void Solver::unbranchOnVar(int var, std::vector<int> values) {
 void Solver::solve() {
     displayLogo();
     displayModelInformation();
+    if (nodeSolveMethod > rootSolveMethod) {
+        rootSolveMethod = nodeSolveMethod;
+        parameters[0] = parameters[1];
+    }
+    solveMethod = rootSolveMethod;
 
     preprocess();
 
@@ -358,11 +473,11 @@ void Solver::solve() {
         std::cout << "inconsistent" << std::endl;
         return;
     }
-    if (solutions.size()) {
-        foundSolution = true;
+    if (hasFoundSolution()) {
         displayFinalInformation();
         return;
     }
+    solveMethod = nodeSolveMethod;
     state = State::Solve;
     displaySolveInformation();
     start_time = clock();
@@ -385,7 +500,6 @@ void Solver::timeThread() {
 void Solver::launchSolve() {
     srand(randomSeed);
     recursiveSolve();
-    foundSolution = solutions.size() > 0;
     solve_time = clock() - start_time;
     state = State::Stop;
 }
@@ -395,6 +509,8 @@ bool Solver::checkConsistent(int var, int value) {
     {
     case SolveMethod::AC4: 
        return AC4();
+    case SolveMethod::AC3:
+        return AC3();
     case SolveMethod::ForwardChecking: 
         return forwardChecking(var, value);
     case SolveMethod::LazyPropagate: 
@@ -428,6 +544,7 @@ bool Solver::recursiveSolve() {
         }
         // assert(allDifferentFamilies[0].isCoherent(problem.getDomains()));
         if (solveMethod == SolveMethod::AC4) initAC4Solve(var, value, values);
+        else if (solveMethod == SolveMethod::AC3) initAC3Solve(var);
         if (!checkConsistent(var, value)) {
             backtrack();
             backtrackAllDiff(var, values);
@@ -463,22 +580,23 @@ void Solver::displayModelInformation() const{
     std::cout << "Initial problem: ";
     std::cout << problem.nbVar() << " variables / ";
     std::cout << problem.nbConstraints() << " constraints" << std::endl;
+    std::cout << std::endl;
 }
 
 void Solver::displaySolveInformation() const{
-    std::cout << "Launch solve with ";
-    std::cout << "solveMethod=" << parameters[0];
-    std::cout << "; varChooser=" << parameters[1];
-    std::cout << "; valChooser=" << parameters[2];
-    if (timeLimit < INT_MAX) std::cout << "; timeLimit=" << parameters[3];
-    if ((parameters[1] == "random" || parameters[2] == "random")) std::cout << "; randomSeed=" << std::to_string(randomSeed);
-    std::cout << "; nbSolutions=" << parameters[5];
+    std::cout << "Launch solve with";
+    std::cout << " nodeSolveMethod=" << parameters[1];
+    std::cout << "; varChooser=" << parameters[2];
+    std::cout << "; valChooser=" << parameters[3];
+    if (timeLimit < INT_MAX) std::cout << "; timeLimit=" << parameters[4];
+    if ((parameters[2] == "random" || parameters[3] == "random")) std::cout << "; randomSeed=" << std::to_string(randomSeed);
+    std::cout << "; nbSolutions=" << parameters[6];
     std::cout << "; verbosity=" << std::to_string(verbosity);
     std::cout << ":"  << std::endl;
 }
 
 void Solver::displayFinalInformation() const{
-    if (foundSolution) std::cout << std::to_string(nbNodesExplored) + " nodes explored - Found " << solutions.size() << " solution(s)" << std::endl;
+    if (hasFoundSolution()) std::cout << std::to_string(nbNodesExplored) + " nodes explored - Found " << solutions.size() << " solution(s)" << std::endl;
     else if (solve_time >= timeLimit) std::cout << std::to_string(nbNodesExplored) + " nodes explored - no solution found" << std::endl;
     else std::cout << "infeasible" << std::endl;
     if (state == State::Stop)

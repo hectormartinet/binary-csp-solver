@@ -19,7 +19,7 @@ public:
     }
 };
 enum class State {Preprocess, Solve, Stop};
-enum class SolveMethod {ForwardChecking, LazyPropagate, AC4};
+enum class SolveMethod {ForwardChecking, LazyPropagate, AC3, AC4};
 
 class Solver {
 
@@ -27,10 +27,12 @@ private:
     CSP problem;
     std::unique_ptr<VariableChooser> varChooser;
     std::unique_ptr<ValueChooser> valueChooser;
+    SolveMethod rootSolveMethod;
+    SolveMethod nodeSolveMethod;
     SolveMethod solveMethod;
     std::vector<std::string> parameters;
     bool verbosity=true;
-    int timeLimit;
+    int timeLimit=INT_MAX;
     unsigned int randomSeed;
     unsigned int nbSolutions=1;
 
@@ -39,9 +41,9 @@ private:
     std::unordered_set<int> unsetVariables;
     std::vector<std::vector<std::pair<int,int>>> deltaDomains;
     std::vector<std::vector<std::tuple<int, int, int, int>>> deltaConstrValPair;
-    std::vector<std::unordered_map<int,int>> solutions;
 
     std::unordered_set<std::pair<int,int>,PairHash> AC4List;
+    std::unordered_set<std::pair<int,int>,PairHash> AC3List;
     std::unordered_set<std::pair<int,int>,PairHash> lazyPropagateList;
 
     std::vector<AllDifferentFamily> allDifferentFamilies;
@@ -52,11 +54,23 @@ private:
     int bestDepth=0;
     clock_t start_time;
     clock_t solve_time=0.;
-    bool foundSolution=false;
+    std::vector<std::unordered_map<int,int>> solutions;
 
 public:
     Solver(CSP _problem, const std::vector<std::string> _parameters, bool _verbosity);
+    Solver(CSP _problem);
     void translateParameters(const std::vector<std::string> _parameters);
+    void setDefaultParameters();
+
+    void setRootSolveMethod(const std::string _rootSolveMethod);
+    void setNodeSolveMethod(const std::string _nodeSolveMethod);
+    void setVarChooser(const std::string _varChooser);
+    void setValChooser(const std::string _valChooser);
+    void setValLambdaChooser(const std::function<bool(int,int)> lambda);
+    void setRandomSeed(const unsigned int _randomSeed);
+    void setTimeLimit(const int _timeLimit);
+    void setVerbosity(const bool _verbosity) {verbosity=_verbosity;}
+    void setNbSolutions(const unsigned int _nbSolutions);
     void initAllDifferent();
 
     bool feasible() const{return problem.feasible(setVariables);}
@@ -81,9 +95,14 @@ public:
     bool initAC4Root();
     bool initAC4Solve(int var, int value, std::vector<int> values);    
     bool AC4();
+    bool initAC3Root();
+    bool initAC3Solve(int var);
+    bool AC3();
     bool checkAC();
     void addAC4List(int x, int a) {AC4List.emplace(std::make_pair(x, a));}
+    void addAC3List(int x, int y) {AC3List.emplace(std::make_pair(x, y));}
     void removeAC4List(int x, int a);
+    void removeAC3List(int x, int y);
 
     int chooseVar() {return varChooser->choose(problem,unsetVariables);}
     std::vector<int> chooseValue(int var) {return valueChooser->choose(problem,var);}
@@ -100,7 +119,7 @@ public:
     bool fixVariables(const std::vector<std::pair<int,int>>& varsToFix);
     std::unordered_map<int,int> retrieveSolution() const{return setVariables;}
     unsigned int getNbNodesExplored() const{return nbNodesExplored;}
-    bool hasFoundSolution() {return foundSolution;}
+    bool hasFoundSolution() const {return (solutions.size() > 0);}
 
     void solveVerbosity();
     void displayModelInformation() const;

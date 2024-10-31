@@ -245,18 +245,9 @@ void CSP::init(std::string path) {
 }
 
 void CSP::init(const ColorProblem& problem) {
-    int nbColors = problem.nb_nodes;
-    nbColors = std::min(nbColors,int(0.5*(std::sqrt(4*problem.nb_edges+1))));
-    std::vector<int> degrees((std::size_t) problem.nb_nodes,0);
-    for (std::pair<int,int> edge : problem.edges) {
-        degrees[(unsigned int)(edge.first)]++;
-        degrees[(unsigned int)(edge.second)]++;
-    }
-    int degreeMax = 0;
-    for (int d:degrees) {
-        degreeMax = std::max(degreeMax, d);
-    }
-    nbColors = std::min(nbColors,degreeMax+1);
+
+    int nbColors = problem.nb_colors;
+
     // Domains
     // Conventions on files -> starting from 1
     for (int var=1; var<=problem.nb_nodes; var++) {
@@ -268,6 +259,9 @@ void CSP::init(const ColorProblem& problem) {
     for (std::pair<int,int> edge : problem.edges) {
         addDifferenceConstraint(edge);
     }
+    std::pair<int,int> firstEdge = problem.edges[0];
+    fixValue(firstEdge.first,0);
+    fixValue(firstEdge.second,1);
 }
 
 void CSP::init(const SudokuProblem& problem) {

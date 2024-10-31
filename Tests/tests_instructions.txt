@@ -16,3 +16,6 @@ generic.txt AC4 AC4 random random 1 42 1 0 0
 nonogram_easy.txt LP LP smallest random 1 42 1 1 0
 nonogram_medium.txt LP LP smallest random 1 42 1 1 0
 nonogram_hard.txt AC3 AC3 smallest copy 1 42 1 1 1
+myciel3.col LP LP smallest random 1 42 1 1 0
+myciel4.col LP LP smallest random 1 42 1 1 0
+myciel5.col LP LP smallest random 1 42 1 1 0

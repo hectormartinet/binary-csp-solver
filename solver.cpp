@@ -10,6 +10,7 @@ Solver::Solver(CSP _problem, const std::vector<std::string> _parameters, bool _v
 Solver::Solver(CSP _problem) : problem(_problem) {
     unsetVariables = problem.getVariables();
     setDefaultParameters();
+    initAllDifferent();
 }
 
 void Solver::setDefaultParameters() {
@@ -108,7 +109,7 @@ void Solver::initAllDifferent() {
 
 void Solver::checkFeasibility(CSP _problem) {
     for (const auto &sol : solutions) {
-        assert(sol.size() == problem.nbVar());
+        assert(sol.size() == _problem.nbVar());
         assert(_problem.feasible(sol));
     }
 }

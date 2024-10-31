@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <cmath>
 
 #include "problemreader.h"
 
@@ -29,6 +30,21 @@ ColorProblem ProblemReader::readColorProblem(std::string path) {
             problem.edges.push_back(std::make_pair(i,j));
         }
     }
+
+    int nbColors = problem.nb_nodes;
+    nbColors = std::min(nbColors,int(0.5*(std::sqrt(4*problem.nb_edges+1))));
+    std::vector<int> degrees((std::size_t) problem.nb_nodes,0);
+    for (std::pair<int,int> edge : problem.edges) {
+        degrees[(unsigned int)(edge.first)-1]++;
+        degrees[(unsigned int)(edge.second)-1]++;
+    }
+    int degreeMax = 0;
+    for (int d:degrees) {
+        degreeMax = std::max(degreeMax, d);
+    }
+    nbColors = std::min(nbColors,degreeMax+1);
+    problem.nb_colors = nbColors;
+
     return problem;
 }
 

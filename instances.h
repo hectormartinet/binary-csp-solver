@@ -14,6 +14,7 @@ struct GenericProblem {
 };
 
 struct ColorProblem {
+    int nb_colors;
     int nb_nodes;
     int nb_edges;
     std::vector<std::pair<int,int>> edges;

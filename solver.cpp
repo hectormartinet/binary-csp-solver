@@ -199,10 +199,8 @@ bool Solver::forwardChecking(int x, int a) {
     assert(solveMethod == SolveMethod::LazyPropagate || solveMethod == SolveMethod::ForwardChecking);
     for (const auto& [y, Cxy] : problem.getConstraints().at(x)) {
         if (unsetVariables.count(y)) {
-            std::vector<int> domain;
-            domain.insert(domain.end(), problem.getDomain(y).begin(), problem.getDomain(y).end());
-            for (int b : domain) {
-                if (!Cxy->feasible(a,b) && !removeVarValue(y, b)) return false;
+            for (int b : Cxy->getForbiddenValues(a, problem.getDomain(y))) {
+                if (!removeVarValue(y, b)) return false;
             }
         }
     }
@@ -526,7 +524,6 @@ bool Solver::checkConsistent(int var, int value) {
 }
 
 bool Solver::recursiveSolve() {
-    // assert(allDifferentFamilies[0].isCoherent(problem.getDomains()));
     if (state == State::Stop) return false;
     if (unsetVariables.empty()) {
         solutions.push_back(setVariables);
@@ -545,7 +542,6 @@ bool Solver::recursiveSolve() {
             backtrackAllDiff(var, values);
             continue;
         }
-        // assert(allDifferentFamilies[0].isCoherent(problem.getDomains()));
         if (solveMethod == SolveMethod::AC4) initAC4Solve(var, value, values);
         else if (solveMethod == SolveMethod::AC3) initAC3Solve(var);
         if (!checkConsistent(var, value)) {

@@ -32,6 +32,13 @@ std::vector<std::pair<int,int>> ExtensiveConstraint::getUselessPairs(const std::
     return uselessPairs;
 }
 
+std::vector<int> ExtensiveConstraint::getForbiddenValues(int a, const std::unordered_set<int>& Dy) {
+    std::vector<int> forbiddenValues;
+    for (int b : Dy) {
+        if (!feasible(a,b)) forbiddenValues.push_back(b);
+    }
+    return forbiddenValues;
+}
 
 void ExtensiveConstraint::display() const {
     std::cout << x << "," << y << ":";
@@ -53,6 +60,15 @@ std::unique_ptr<Constraint> IntensiveConstraint::extensify(const std::unordered_
     return std::unique_ptr<ExtensiveConstraint> (constraint);
 }
 
+std::vector<int> IntensiveConstraint::getForbiddenValues(int a, const std::unordered_set<int>& Dy) {
+    std::vector<int> forbiddenValues;
+    for (int b : Dy) {
+        if (!feasible(a,b)) forbiddenValues.push_back(b);
+    }
+    return forbiddenValues;
+}
+
+
 std::unique_ptr<Constraint> DifferenceConstraint::extensify(const std::unordered_set<int>& Dx, const std::unordered_set<int>& Dy) {
     ExtensiveConstraint* constraint = new ExtensiveConstraint(x,y);
     for (int a : Dx) {
@@ -63,3 +79,7 @@ std::unique_ptr<Constraint> DifferenceConstraint::extensify(const std::unordered
     return std::unique_ptr<ExtensiveConstraint> (constraint);
 }
 
+std::vector<int> DifferenceConstraint::getForbiddenValues(int a, const std::unordered_set<int>& Dy) {
+    if (Dy.count(a)) return {a};
+    return {};
+}

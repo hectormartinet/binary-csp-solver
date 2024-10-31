@@ -33,6 +33,9 @@ public:
     // Get pairs where x=a is not in the domain Dx in input
     virtual std::vector<std::pair<int,int>> getUselessPairs(const std::unordered_set<int>&) const=0;
 
+    // return values b in Dy such that x=a => y!=b
+    virtual std::vector<int> getForbiddenValues(int a, const std::unordered_set<int>& Dy)=0;
+
     virtual const std::unordered_set<int>& getSupport(int a) const=0;
     virtual size_t getSupportSize(int value) const=0;
 
@@ -58,6 +61,8 @@ public:
     bool feasible(const std::unordered_map<int,int>& partSol) const{return feasible(partSol.at(x),partSol.at(y));}
 
     std::vector<std::pair<int,int>> getUselessPairs(const std::unordered_set<int>& Dx) const;
+
+    std::vector<int> getForbiddenValues(int a, const std::unordered_set<int>& Dy);
 
     const std::unordered_set<int>& getSupport(int a) const {return list.at(a);}
     size_t getSupportSize(int value) const {return list.count(value) ? list.at(value).size():0;}
@@ -85,6 +90,8 @@ public:
 
     std::vector<std::pair<int,int>> getUselessPairs(const std::unordered_set<int>&) const{return std::vector<std::pair<int,int>>();};
 
+    std::vector<int> getForbiddenValues(int a, const std::unordered_set<int>& Dy);
+
     const std::unordered_set<int>& getSupport(int) const{throw std::logic_error("Not implemented lol");};
     size_t getSupportSize(int) const{throw std::logic_error("Not implemented lol");};
 
@@ -107,6 +114,8 @@ public:
     bool feasible(const std::unordered_map<int,int>& partSol) const{return feasible(partSol.at(x),partSol.at(y));}
 
     std::vector<std::pair<int,int>> getUselessPairs(const std::unordered_set<int>&) const{return std::vector<std::pair<int,int>>();};
+
+    std::vector<int> getForbiddenValues(int a, const std::unordered_set<int>& Dy);
 
     const std::unordered_set<int>& getSupport(int) const{throw std::logic_error("Not implemented lol");};
     size_t getSupportSize(int) const{throw std::logic_error("Not implemented lol");};

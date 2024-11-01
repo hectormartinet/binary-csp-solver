@@ -10,6 +10,8 @@ class AllDifferentFamily {
 private:
     std::unordered_set<int> variables;
     std::unordered_map<int,std::unordered_set<int>> valToVar;
+    // Values such that there is exactly one variable that can take this value
+    std::unordered_map<int,int> uniqueValues;
 
     unsigned int nbValPossible;
 
@@ -23,6 +25,8 @@ public:
     void add(int var, int val);
 
     bool init(std::vector<std::pair<int,int>>& varsToFix) const;
+
+    void fillUniqueValues(std::vector<std::pair<int,int>>& varsToFix) const;
 
     bool isCoherent(const std::unordered_map<int,std::unordered_set<int>>& domains) const;
 

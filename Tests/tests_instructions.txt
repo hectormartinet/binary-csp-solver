@@ -19,3 +19,4 @@ nonogram_hard.txt AC3 AC3 smallest copy 1 42 1 1 1
 myciel3.col LP LP smallest random 1 42 1 1 0
 myciel4.col LP LP smallest random 1 42 1 1 0
 myciel5.col LP LP smallest random 1 42 1 1 0
+queens_20.txt LP LP random random 2 42 1000 1 0

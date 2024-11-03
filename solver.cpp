@@ -19,7 +19,7 @@ void Solver::setDefaultParameters() {
     varChooser = std::make_unique<SmallestDomainVariableChooser>();
     valueChooser = std::make_unique<CopyValueChooser>();
     randomSeed = (unsigned int)(time(NULL));
-    parameters = {"LP", "LP", "smallest", "copy", " ", std::to_string(randomSeed), "1"};
+    parameters = {"LP", "LP", "smallest", "copy", " ", std::to_string(randomSeed), "1", "1"};
 }
 
 void Solver::setRootSolveMethod(const std::string _rootSolveMethod) {
@@ -78,8 +78,13 @@ void Solver::setNbSolutions(const unsigned int _nbSolutions) {
     parameters[6] = (_nbSolutions == INT_MAX) ? "all" : std::to_string(_nbSolutions);
 }
 
+void Solver::setAllDifferent(const bool _allDifferent) {
+    allDifferent = _allDifferent;
+    parameters[7] = std::to_string(_allDifferent);
+}
+
 void Solver::translateParameters(const std::vector<std::string> _parameters){
-    assert(_parameters.size() == 7);
+    assert(_parameters.size() == 8);
     setRootSolveMethod(_parameters[0]);
     setNodeSolveMethod(_parameters[1]);
     setVarChooser(_parameters[2]);
@@ -91,12 +96,15 @@ void Solver::translateParameters(const std::vector<std::string> _parameters){
 
     unsigned int _nbSolutions = (parameters[6] == "all") ? INT_MAX : std::stoul(parameters[6]);
     setNbSolutions(_nbSolutions);
+
+    setAllDifferent(bool(std::stoi(parameters[7])));
 }
 
 void Solver::initAllDifferent() {
     for (int var:problem.getVariables()) {
         varToAllDifferentFamilyIdx.emplace(var,std::vector<unsigned int>());
     }
+    if (!allDifferent) return;
     unsigned int idx = 0;
     for (const auto& family : problem.getAllDifferentFamilies()) {
         allDifferentFamilies.push_back(AllDifferentFamily(family,problem.getDomains()));

@@ -6,7 +6,7 @@
 int main(int argc, char** argv) {
     bool isTest = (argc > 1);
     if (isTest) {
-        if (argc < 12) {
+        if (argc < 13) {
             std::cout << "Usage: run filePath solveMethod variableChooser valueChooser verbosity timeLimit" << std::endl;
             exit(1);
         }
@@ -19,11 +19,12 @@ int main(int argc, char** argv) {
         const std::string _timeLimit = argv[7];
         const std::string _randomSeed = argv[8];
         const std::string _nbSolutions = argv[9];
-        const std::string _checkIfFoundSolution = argv[10];
-        const std::string _checkSolveAtRoot = argv[11];
+        const std::string _allDifferent = argv[10];
+        const std::string _checkIfFoundSolution = argv[11];
+        const std::string _checkSolveAtRoot = argv[12];
 
         const std::vector<std::string> parameters = {_rootSolveMethod, _nodeSolveMethod, _variableChooser, 
-                                                    _valueChooser, _timeLimit, _randomSeed, _nbSolutions};
+                                                    _valueChooser, _timeLimit, _randomSeed, _nbSolutions, _allDifferent};
 
         CSP csp(_modelPath);
         Solver solver(csp, parameters, _verbosity);

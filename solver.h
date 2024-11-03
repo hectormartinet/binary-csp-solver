@@ -35,6 +35,7 @@ private:
     int timeLimit=INT_MAX;
     unsigned int randomSeed;
     unsigned int nbSolutions=1;
+    bool allDifferent=true;
 
     std::unordered_map<int,int> setVariables;
     std::vector<std::vector<int>> deltaSetVars;
@@ -71,6 +72,7 @@ public:
     void setTimeLimit(const int _timeLimit);
     void setVerbosity(const bool _verbosity) {verbosity=_verbosity;}
     void setNbSolutions(const unsigned int _nbSolutions);
+    void setAllDifferent(const bool _allDifferent);
     void initAllDifferent();
 
     bool feasible() const{return problem.feasible(setVariables);}

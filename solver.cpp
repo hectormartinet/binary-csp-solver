@@ -215,7 +215,8 @@ void Solver::removeLazyPropagateList(int x, int a) {
 
 bool Solver::lazyPropagate(int var, int value) {
     assert(solveMethod == SolveMethod::LazyPropagate);
-    lazyPropagateList.emplace(std::make_pair(var,value));
+    if (!forwardChecking(var,value)) return false;
+    
     while (!lazyPropagateList.empty()) {
         auto [x,a] = *lazyPropagateList.begin();
         removeLazyPropagateList(x,a);

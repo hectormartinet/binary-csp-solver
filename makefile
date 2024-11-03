@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-I. -O3
+CFLAGS=-I. -Ofast
 
 CONF := debug
 NAME = run
@@ -8,7 +8,7 @@ ifeq ($(CONF),debug)
     CXXFLAGS += -g -Wall -Wextra -Wpedantic
 endif
 ifeq ($(CONF),release)
-	CXXFLAGS += -O3
+	CXXFLAGS += -Ofast -DNDEBUG
 endif
 
 SRC = main.cpp solver.cpp constraint.cpp problemreader.cpp csp.cpp instances.cpp alldifferentfamily.cpp

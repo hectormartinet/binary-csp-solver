@@ -17,6 +17,7 @@ CSP::CSP(const CSP& csp) {
     }
     nConstraints = csp.nbConstraints();
     allDifferentFamilies = csp.allDifferentFamilies;
+    problemType = csp.problemType;
 }
 
 void CSP::addVariable(int var) {

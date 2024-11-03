@@ -616,10 +616,27 @@ void Solver::displaySolution() const{
     for (unsigned int i = 0; i < solutions.size(); i++) {
         std::cout << std::endl;
         std::cout << "SOLUTION " << i + 1 << std::endl;
+        std::vector<int> sol(problem.nbVar(), 0);
         for (auto [var,value] : solutions[i]) {
-            std::cout << var << ":" << value << "; ";
+            sol[var] = value;
+        }
+        for (unsigned int i = 0; i < sol.size(); i++) {
+            std::cout << i+1 << ":" << sol[i] + 1 << "; ";
         }
         std::cout << std::endl;
+        if (problem.getProblemType() == Problem::Queens && problem.nbVar() <= 30) {
+            for (unsigned int i = 0; i < sol.size(); i++) {
+                std::cout << "|";
+                for (int k = 0; k < sol[i]; k++) {
+                    std::cout << " |";
+                }
+                std::cout << "o";
+                for (unsigned int k = 0; k < problem.nbVar() - sol[i] - 1; k++) {
+                    std::cout << "| ";
+                }
+                std::cout << "|" << std::endl;
+            }
+        }
     }
 }
 

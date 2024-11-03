@@ -33,6 +33,7 @@ public:
     std::size_t nbVar() const{return domains.size();}
     std::size_t sizeDomain(int var) const{return domains.at(var).size();}
     unsigned int nbConstraints() const {return nConstraints;}
+    Problem getProblemType() const {return problemType;}
 
     void addVariable(int var);
     void addVariableValue(int var, int value);

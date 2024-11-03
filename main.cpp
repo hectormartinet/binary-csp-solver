@@ -20,8 +20,9 @@ int main(int argc, char** argv) {
         const std::string _randomSeed = argv[8];
         const std::string _nbSolutions = argv[9];
         const std::string _allDifferent = argv[10];
-        const std::string _checkIfFoundSolution = argv[11];
-        const std::string _checkSolveAtRoot = argv[12];
+        const bool _displaySolution = std::stoi(argv[11]);
+        const bool _checkIfFoundSolution = std::stoi(argv[12]);
+        const bool _checkSolveAtRoot = std::stoi(argv[13]);
 
         const std::vector<std::string> parameters = {_rootSolveMethod, _nodeSolveMethod, _variableChooser, 
                                                     _valueChooser, _timeLimit, _randomSeed, _nbSolutions, _allDifferent};
@@ -33,8 +34,9 @@ int main(int argc, char** argv) {
 
         solver.checkFeasibility(csp);
         if (solver.hasFoundSolution()) solver.checkFeasibility(csp);
-        if (std::stoi(_checkIfFoundSolution)) assert(solver.hasFoundSolution());
-        if (std::stoi(_checkSolveAtRoot)) assert(solver.getNbNodesExplored() == 0);
+        if (_checkIfFoundSolution) assert(solver.hasFoundSolution());
+        if (_checkSolveAtRoot) assert(solver.getNbNodesExplored() == 0);
+        if (_displaySolution) solver.displaySolution();
         
     } else {
         const std::string _modelPath = "./Tests/queens_75.txt";

@@ -12,40 +12,66 @@ AllDifferentFamily::AllDifferentFamily(std::vector<int> _variables, const std::u
         }
     }
     nbValPossible = nbVal();
+
+    for (const auto& [val, varSet] : valToVar) {
+        assert(!varSet.empty());
+        if (varSet.size()==1) {
+            uniqueValues.emplace(val,*varSet.begin());
+        }
+    }
 }
 
 void AllDifferentFamily::add(int var, int value) {
-    if (valToVar.at(value).count(var)) return;
-    valToVar.at(value).emplace(var);
-    if (valToVar.at(value).size() == 1)
+    if (!valToVar.at(value).emplace(var).second) return;
+    switch (valToVar.at(value).size())
+    {
+    case 1:
         nbValPossible++;
+        uniqueValues.emplace(value, var);
+        return;
+    case 2:
+        uniqueValues.erase(value);
+        return;
+    default:
+        return;
+    }
 }
 
 bool AllDifferentFamily::remove(int var, int value, std::vector<std::pair<int,int>>& varsToFix) {
-    if (!valToVar.at(value).count(var)) return true;
-    valToVar.at(value).erase(var);
-    if (valToVar.at(value).size() == 0) {
+    if (!valToVar.at(value).erase(var)) return true;
+
+    switch (valToVar.at(value).size())
+    {
+    case 0:
         nbValPossible--;
-        if (nbValPossible < nbVar()) return false;
+        uniqueValues.erase(value);
+        if (nbValPossible != nbVar()) return nbValPossible < nbVar();
+        fillUniqueValues(varsToFix);
+        return true;
+    case 1:
+    {
+        int uniqueVar = *valToVar.at(value).begin();
+        uniqueValues.emplace(value, uniqueVar);
+        if (nbValPossible==nbVar()) varsToFix.push_back(std::make_pair(uniqueVar,value));
+        return true;
     }
-    if (valToVar.at(value).size() == 1 && nbValPossible==nbVar()) {
-        int varToFix = *valToVar.at(value).begin();
-        varsToFix.push_back(std::make_pair(varToFix,value));
+    default:
+        return true;
     }
-    return true;
 }
 
 bool AllDifferentFamily::init(std::vector<std::pair<int,int>>& varsToFix) const {
-    for (const auto& [value, valSet] : valToVar) {
-        if (valSet.empty()) return false;
-        if (valSet.size()==1) {
-            int varToFix = *valToVar.at(value).begin();
-            varsToFix.push_back(std::make_pair(varToFix,value));
-        }
-    }
+    if (nbVar() > nbVal()) return false;
+    if (nbVar() < nbVal()) return true;
+    fillUniqueValues(varsToFix);
     return true;
 }
 
+void AllDifferentFamily::fillUniqueValues(std::vector<std::pair<int,int>>& varsToFix) const {
+    for (auto [value, var] : uniqueValues) {
+        varsToFix.push_back(std::make_pair(var,value));
+    }
+}
 
 bool AllDifferentFamily::isCoherent(const std::unordered_map<int,std::unordered_set<int>>& domains) const {
     unsigned int linesCheckSum = 0;

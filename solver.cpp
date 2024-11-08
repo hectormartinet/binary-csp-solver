@@ -638,6 +638,7 @@ void Solver::displaySolution() const{
             }
         }
     }
+    std::cout << std::endl;
 }
 
 void Solver::displayLogo() const{

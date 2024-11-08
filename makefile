@@ -8,7 +8,7 @@ ifeq ($(CONF),debug)
     CXXFLAGS += -g -Wall -Wextra -Wpedantic
 endif
 ifeq ($(CONF),release)
-	CXXFLAGS += -Ofast -DNDEBUG
+	CXXFLAGS += -O3 -DNDEBUG
 endif
 
 SRC = main.cpp solver.cpp constraint.cpp problemreader.cpp csp.cpp instances.cpp alldifferentfamily.cpp
